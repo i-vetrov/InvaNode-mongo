@@ -1,0 +1,13 @@
+{
+    "name": "Last Stories",
+    "author":"InvaNode",
+    "description":"Gets last posts with Name and Alias",
+    "content":{
+        "replace":"{{PLUGIN:LAST_STORIES}}",
+        "source":"last_stories.html",
+        "replaceWith":""
+    },
+    "applyTo":[
+        "posts"
+    ]
+}

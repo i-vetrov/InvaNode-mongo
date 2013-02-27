@@ -1,0 +1,14 @@
+<div>Latest posts:</div>
+<div id="last-stories"></div>
+<script>
+    $(document).ready(function(){
+        _in.api("get_latest_posts",{count: 5},function(data){
+            data = $.parseJSON(data);
+            var i = data.length;
+            while(i--)
+            {
+                $("#last-stories").append('<div><a alias="' + data[i].alias + '" page-type="posts" page-title="'+data[i].name.replaceAll('["]', "\\'")+'" href="/' + data[i].alias + '">' + data[i].name + '</a></div>');
+            }      
+        });
+    });
+</script>

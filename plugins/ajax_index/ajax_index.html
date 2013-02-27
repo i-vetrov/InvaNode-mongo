@@ -1,0 +1,158 @@
+<script>
+var curIndex = "";    
+$(document).click(function(event) {
+    var targ;
+    if (!event) {
+        var event = window.event;
+    }
+    if (event.target) {
+        targ = event.target;
+    }
+    else if (event.srcElement) {
+        targ = event.srcElement;
+    }
+    if ($(targ).is('a')) {
+        event.preventDefault();
+        var alias = $(targ).attr("alias");
+        var title = $(targ).attr("page-title");
+        var type = $(targ).attr("page-type");
+        if(alias !== undefined) {
+            $("#content-container").html("");
+            if(alias == curIndex) {
+                try {
+                    history.pushState({prevPage:curIndex, title:document.title, type:type}, '', siteUrl+curIndex);
+                    loadIndex(title);
+                    $(".main-menu a").removeClass("active");
+                    $(".main-menu a[page-type='index']").addClass("active");
+                }
+                catch(e) {
+                    location.href=siteUrl+curIndex;
+                }
+            }
+            else{
+                try {
+                    history.pushState({prevPage:alias, title:title, type:type}, '', siteUrl+alias);
+                    if(type == "posts") {
+                        loadPost(alias, title);
+                        $(".main-menu a").removeClass("active");
+                    }
+                    else if (type == "pages") {
+                        loadPage(alias, title);
+                        $(".main-menu a").removeClass("active");
+                        $(".main-menu a[alias='"+alias+"']").addClass("active");
+                    }
+                }
+                catch(e) {
+                    location.href=siteUrl+alias;
+                }
+                
+            }
+        }
+        else {
+            location.href = targ;
+        }
+    }
+});
+
+$(document).ready(function(){
+  _in.api("get_page_type",{alias:location.href.replaceAll(siteUrl,"")},function(data){
+      history.replaceState({prevPage:location.href.replaceAll(siteUrl,""), title:document.title, type:data}, '', null);
+  });  
+  
+  window.addEventListener("popstate", function(event) {   
+      event.preventDefault();
+        if(event.state){
+            $("#content-container").html("");
+                if(event.state.prevPage == curIndex){
+                        $(".main-menu a").removeClass("active");
+                        $(".main-menu a[page-type='index']").addClass("active");
+                        loadIndex(event.state.title);
+  		}
+  		else{
+  			if(event.state.type == "posts") {
+                            $(".main-menu a").removeClass("active");
+                            loadPost(event.state.prevPage, event.state.title);
+                        }
+                        else if (event.state.type == "pages") {
+                            $(".main-menu a").removeClass("active");
+                            $(".main-menu a[alias='"+event.state.prevPage+"']").addClass("active");
+                            loadPage(event.state.prevPage, event.state.title);
+                        }
+  		}
+  	}
+  }, false);
+});
+
+function getDate(raw)
+{
+    var date;
+    var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    date = '<span class="date-d">'+raw.getDate()+'</span> <span class="date-m">'+monthNames[raw.getMonth()]+'</span> <span class="date-y">'+raw.getFullYear()+'</span>'
+    return date;
+}
+
+function loadIndex(title)
+{
+        curPageUrl = curIndex;
+        document.title = title; //siteName
+        _in.api("get_index", function(contents){
+            contents = JSON.parse(contents);
+            if(contents[0].type=='posts'){
+                _in.api("get_template",{name:"small_post"}, function(template){
+                    $("#content-container").html('');
+                    var i = contents.length;
+                    while(i--)
+                    {
+                        var pageHtml = template.replaceAll("{{SMALL_POST_NAME}}", contents[i].name)
+                        .replaceAll("{{SMALL_POST_DATE}}", getDate(new Date(contents[i].time*1000)))
+                        .replaceAll("{{SMALL_POST_CONTENT}}", contents[i].smalldata)
+                        .replaceAll("{{SMALL_POST_LINK}}", contents[i].alias)
+                        .replaceAll("{{LINK_ALIAS}}", contents[i].alias)
+                        .replaceAll("{{LINK_TITLE}}", contents[i].name.replaceAll('["]', "\\'"));
+                        $("#content-container").append(pageHtml);
+                    }	
+                });
+            }
+            else if(contents[0].type=='index'){
+                _in.api("get_template",{name:"index"}, function(template){
+                    $("#content-container").html('');
+                    var pageHTML = template.replaceAll("{{PAGE_CONTENT}}", contents[0].smalldata+contents[0].data)
+                    .replaceAll("{{LINK_ALIAS}}", contents[0].alias)
+                    .replaceAll("{{LINK_TITLE}}", contents[0].name.replaceAll('["]', "\\'"));
+                    $("#content-container").append(pageHTML);                             
+                });
+            }
+        });    
+}
+
+function loadPage(alias, title)
+{
+        curPageUrl = alias;
+        document.title = title.replaceAll("\\\\'",'"')+' | '+siteName;
+        _in.api("get_template",{name:"page"}, function(template){
+            _in.api("get_entity_by_alias",{alias: alias, type:"pages"}, function(contents){
+                    contents = JSON.parse(contents);
+                    var postHtml = template.replaceAll("{{POST_NAME}}", contents.name)
+                    .replaceAll("{{POST_DATE}}", getDate(new Date(contents.time*1000)))
+                    .replaceAll("{{PAGE_CONTENT}}", contents.smalldata+contents.data)
+                    $("#content-container").html(postHtml);
+            });
+        });
+}
+
+function loadPost(alias, title)
+{
+        curPageUrl = alias;
+        document.title = title.replaceAll("\\\\'",'"')+' | '+siteName;
+        _in.api("get_template",{name:"post"}, function(template){
+            _in.api("get_entity_by_alias",{alias: alias, type:"posts"}, function(contents){
+                    contents = JSON.parse(contents);
+                    var postHtml = template.replaceAll("{{POST_NAME}}", contents.name)
+                    .replaceAll("{{POST_DATE}}", getDate(new Date(contents.time*1000)))
+                    .replaceAll("{{PAGE_CONTENT}}", contents.smalldata+contents.data)
+                    $("#content-container").html(postHtml);
+            });
+        });
+}
+</script>

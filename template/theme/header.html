@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{TITLE}}</title>
+        <meta name="description" content="{{PAGE_DESCRIPTION}}" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link type="text/css" rel="stylesheet" media="all" href="/template/theme/style.css" />
+        <link type="text/css" rel="stylesheet" media="all" href="/template/assets/css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="/template/assets/css/wysiwyg-color.css" />
+        <script src="/template/assets/js/jquery.js"></script>
+        <script src="/template/assets/js/in.js"></script>
+        <script src="/template/assets/js/bootstrap.min.js"></script>
+        {{PLUGIN:GOOGLE_ANALYTICS}}
+      	<script>
+            var curPageUrl = "{{JS_CUR_PAGE_URL}}";
+            var siteUrl = "{{JS_SITE_URL}}";
+            var siteName = "{{JS_SITE_NAME}}"
+            $("document").ready(function(){});
+        </script>
+        {{PLUGIN:AJAX_INDEX}}
+    </head>
+    <body>
+<div class="navbar navbar-inverse">
+    <div class="grad-menu">
+        <div class="container">
+            <div style="width: 940px; margin: 0 auto 75px auto;">
+                <a class="main-logo" href="{{SITE_URL}}" alias="" page-type="index" page-title="{{JS_SITE_NAME}}">{{APPNAME}}</a>
+                <div class="user-menu">{{PLUGIN:SOCIAL_BUTTONS}}</div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="main-menu">{{MAIN_MENU}}</div>
+        </div>
+    </div>
+</div>
+    

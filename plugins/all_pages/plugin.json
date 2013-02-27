@@ -1,0 +1,1 @@
+{"name":"All Pages","author":"InvaNode","description":"Getting the list of all pages.","content":{"replace":"{{PLUGIN:ALL_PAGES}}","source":"all_pages.html","replaceWith":""},"applyTo":["index","pages","posts"]}

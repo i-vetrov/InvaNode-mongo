@@ -1,0 +1,16 @@
+{
+    "name": "Google Analytics",
+    "author":"InvaNode",
+    "description":"Inserts Google Analytics code.",
+    "content":{
+        "replace":"{{PLUGIN:GOOGLE_ANALYTICS}}",
+        "source":"google_analytics.html",
+        "replaceWith":""
+    },
+    "applyTo":[
+        "index",
+        "pages",
+        "posts"
+        
+    ]
+}

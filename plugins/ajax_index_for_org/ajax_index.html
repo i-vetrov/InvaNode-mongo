@@ -1,0 +1,108 @@
+<div id="ajax_index"></div>
+
+<script>
+var curIndex = "ajax";    
+
+$(document).click(function(event) {
+    var targ;
+    if (!event) {
+        var event = window.event;
+    }
+    if (event.target) {
+        targ = event.target;
+    }
+    else if (event.srcElement) {
+        targ = event.srcElement;
+    }
+    if ($(targ).is('a')) {
+        event.preventDefault();
+        var alias = $(targ).attr("alias");
+        var title = $(targ).attr("page-title");
+        if(alias !== undefined) {
+            if(alias == curIndex) {
+                try {
+                    history.pushState({prevPage:curIndex, title:document.title}, '', siteUrl+curIndex);
+                }
+                catch(e) {
+                    location.href=siteUrl+curIndex;
+                }
+                loadIndex(document.title);
+            }
+            else{
+                try {
+                    history.pushState({prevPage:alias, title:title}, '', siteUrl+alias);
+                }
+                catch(e) {
+                    location.href=siteUrl+alias;
+                }
+                loadPost(alias, title);
+            }
+        }
+        else {
+            location.href = targ;
+        }
+    }
+});
+
+
+$(document).ready(function(){
+  try {
+      history.pushState({prevPage:curIndex, title:document.title}, '', null);
+  }
+  catch(e)
+  {
+      
+  }
+  window.addEventListener("popstate", function(event) {   
+      event.preventDefault();
+        if(event.state){
+                if(event.state.prevPage == curIndex){
+                        loadIndex(event.state.title);
+  		}
+  		else{
+  			loadPost(event.state.prevPage, event.state.title);
+  		}
+  	}
+  }, false); 
+  loadIndex(document.title);
+});
+
+function loadIndex(title)
+{
+        curPageUrl = curIndex;
+        document.title = title;
+        _in.api("get_template",{name:"small_post"}, function(template){
+            _in.api("get_latest_posts",{count: 1000}, function(contents){
+                $("#ajax_index").html('');
+                contents = JSON.parse(contents);
+                var i = contents.length;
+                while(i--)
+                {
+                    var smallPostHtml = template.replaceAll("{{SMALL_POST_NAME}}", contents[i].name)
+                    .replaceAll("{{SMALL_POST_DATE}}", new Date(contents[i].time*1000).toLocaleDateString())
+                    .replaceAll("{{SMALL_POST_CONTENT}}", contents[i].smalldata)
+                    .replaceAll("{{SMALL_POST_LINK}}", contents[i].alias)
+                    .replaceAll("{{LINK_ALIAS}}", contents[i].alias)
+                    .replaceAll("{{LINK_TITLE}}", contents[i].name.replaceAll('["]', "\\'"));
+                    $("#ajax_index").append(smallPostHtml);
+                }	
+            });
+        });
+}
+  
+function loadPost(alias, title)
+{
+        curPageUrl = alias;
+        document.title = title.replaceAll("\\\\'",'"')+' | '+siteName;
+        _in.api("get_template",{name:"post"}, function(template){
+            _in.api("get_entity_by_alias",{alias: alias, type:"posts"}, function(contents){
+                    contents = JSON.parse(contents);
+                    var postHtml = template.replaceAll("{{POST_NAME}}", contents.name)
+                    .replaceAll("{{POST_DATE}}", new Date(contents.time*1000).toLocaleDateString())
+                    .replaceAll("{{PAGE_CONTENT}}", contents.smalldata+contents.data)
+                    $("#ajax_index").html(postHtml);
+            });
+        });
+}
+
+</script>

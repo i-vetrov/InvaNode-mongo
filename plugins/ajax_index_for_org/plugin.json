@@ -1,0 +1,1 @@
+{"name":"AJAX Index page for invanode.org","author":"InvaNode","description":"Generating index page with AJAX","content":{"replace":"{{PLUGIN:AJAX_INDEX_ORG}}","source":"ajax_index.html","replaceWith":""},"applyTo":["index","pages","posts"]}

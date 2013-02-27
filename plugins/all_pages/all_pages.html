@@ -1,0 +1,14 @@
+<div style="float:left;">Site content:</div>
+<div id="all-pages"><div style="float:left;"></div></div>
+<script>
+    $(document).ready(function(){
+        _in.api("get_all_pages", function(data){
+            data = $.parseJSON(data);
+            var i = data.length;
+            while(i--)
+            {
+                $("#last-stories").append('<div style="float:left;"><a href="/' + data[i].alias + '">' + data[i].name + '</a></div>');
+            }      
+        });
+    });
+</script>

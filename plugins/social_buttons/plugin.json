@@ -1,0 +1,1 @@
+{"name":"Social buttons","author":"InvaNode","description":"Provide some common cosial buttons","content":{"replace":"{{PLUGIN:SOCIAL_BUTTONS}}","source":"social_buttons.html","replaceWith":""},"applyTo":["index","pages","posts"]}

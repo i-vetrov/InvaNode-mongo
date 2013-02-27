@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <title>InvaNode Admin Panel</title>
+    <script src="/template/assets/js/jquery.js"></script>
+        <script src="/template/assets/js/bootstrap.min.js"></script>
+        <script src="/template/assets/js/wysihtml5-0.3.0.min.js"></script>
+        <script src="/template/assets/js/bootstrap-wysihtml5-custom.js"></script>
+        <script src="/template/assets/js/bootbox.min.js"></script>
+        <script src="/template/assets/js/in.js"></script>
+        <link rel="stylesheet" type="text/css" href="/template/assets/css/bootstrap-wysihtml5-0.0.2.css" />
+        <link type="text/css" rel="stylesheet" media="all" href="/template/assets/css/bootstrap.min.css" />
+        <script src="/template/admin/codemirror/codemirror.js"></script>
+        <link rel="stylesheet" href="/template/admin/codemirror/codemirror.css" />
+        <script src="/template/admin/codemirror/mode/xml/xml.js"></script>
+        <script src="/template/admin/codemirror/mode/javascript/javascript.js"></script>
+        <script src="/template/admin/codemirror/mode/css/css.js"></script>
+        <script src="/template/admin/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+
+   <style>
+      body {
+        padding-top: 60px;
+      }
+      .CodeMirror {
+        background-color: #fff; 
+      }
+      .CodeMirror-scroll {
+        height: 650px;
+      }
+    </style>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+<script>
+   var myCodeMirror; 
+    String.prototype.replaceAll=function(find, replace_to){
+     return this.replace(new RegExp(find, "g"), replace_to);
+};
+
+function getLocalImages()
+{
+    _in.api("get_local_images", function(data){
+        var out = "";
+        if(data=="error"){
+            out = "Error loading files";
+        }
+        else
+        {    
+        data = $.parseJSON(data);
+        var i = data.length;
+         while(i--)
+             {
+                out +=  '<div style="float:left; padding: 6px; border: 1px solid #ccc; margin:0 10px 10px 0; cursor:pointer;" onclick="insertLocalImage(\''+data[i]+'\')"><img style="height: 100px; width: auto;" src="/images/'+encodeURI(data[i])+'" /></div>'
+               
+             }
+         out +=  '<div style="float:left; height: 100px; width: 100px; text-align: center; padding: 6px; border: 1px solid #ccc; margin:0 10px 10px 0; cursor:pointer; position:relative;">'+
+                 '<input type="file" name="fileBox" id="fileBox" style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" onchange="addNewImage(event)">'+
+                 '<span style="font-size: 94px;line-height: 99px; color:#08c;" id="image-load-loader-place">\+</span></div>'    
+        $("#local-images-holder").html(out);
+        }  
+    });
+}
+
+function insertLocalImage(fileName)
+{
+    $("#local-image-url").val("http://"+location.host+'/images/'+encodeURI(fileName));
+    
+}
+    
+function addNewImage(event)
+{
+  $("#image-load-loader-place").html('<img src="/template/assets/img/loading.gif" width: 40px; height: 40px; />');  
+  var SelectedFile = event.target.files[0];
+  Name = SelectedFile.name;
+  Size = SelectedFile.size;
+  FReader = new FileReader();   
+  FReader.onload = function(evn){  
+            _in.api("upload_image_file",{'filedata':evn.target.result, 'name':Name, 'size':Size},function(data){
+                    if(data=="error"){alert("somthing went wrong!"); getLocalImages();}
+                    else{
+                        getLocalImages();
+                    }
+    });
+  }
+  FReader.readAsDataURL(SelectedFile)
+}
+
+
+    
+    $("document").ready(function(){
+       loadAll(window.location.hash.split('#')[1]);
+    });
+  function loadAll(type)
+    {   
+        var todo='load_all_'+type;
+        _in.api(todo, function(data){
+            var toHtml;
+            data = $.parseJSON(data);
+            if(type!="templates"){
+                    toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
+                    toHtml +='<div class="span15">';
+                    toHtml +='<div class="span1" style="min-height:50px;"><h4>ID</h4></div><div class="span7"><h4>Name</h4></div><div class="span3"><h4>Options</h4></div>';
+                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                    data.forEach(function(line){
+                        toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;">'+line.id+'</div><div class="span7" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}'+line.alias+'" target="_blank">'+line.name+'</a></div><div class="span3">'+buttonsGroup(type, line.id)+'</div>';
+                        toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                    });
+                    toHtml +='</div>';
+            }
+            else{
+                    toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"></div>';
+                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                    var i = data.length;
+                    while(i--){
+                        toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;"></div><div class="span7" style="min-height:50px; margin-top: 14px;">'+data[i]+'</div><div class="span3">'+buttonsGroup(type, data[i])+'</div>';
+                        toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';  
+                    }  
+            }
+            $("#main_canv").html(toHtml)
+        });
+    }
+        
+    function buttonsGroup(type, id)
+    {
+        if(type=='users'){
+            return '<a class="btn btn-primary" href="#" style="margin-top: 15px;" onclick="editUser('+id+');return false;"><i class="icon-pencil icon-white"></i> Change password</a>';
+        }
+        else if(type=='templates'){
+            return '<div class="btn-toolbar"><div class="btn-group"><a class="btn" href="#" onclick="editTemplate(\''+id+'\');return false;"><i class="icon-edit"></i></a></div></div>';
+        }
+        else{
+            return '<div class="btn-toolbar"><div class="btn-group"><a class="btn" href="#" onclick="editPPU(\''+type+'\', '+id+');return false;"><i class="icon-edit"></i></a><a class="btn btn-danger" href="#" onclick="deletePPU(\''+type+'\', '+id+');return false;"><i class="icon-remove"></i></a></div></div>';
+        }
+    }
+   
+   function editUser(id, userName)
+    {   
+        var type="users";
+        var name ='Change password';
+        var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\''+type+'\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';  
+            toHtml +='<div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">New password: </h4> <input type="text" class="span3" id="ent_password" /></div>';
+            $("#main_canv").html(toHtml);
+    }
+   
+   function editTemplate(fName)
+    {
+         _in.api("process_template_data",{todo:"get",fname:fName,fdata:"null"},function(data){
+          if(data!="error"){
+            var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+fName+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveTemplate(\''+fName+'\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'templates\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
+         
+            toHtml +='<textarea style="width: 810px; height: 650px; background-color: #fff;" id="editor"></textarea>';
+            
+            toHtml +='</div>';
+            $("#main_canv").html(toHtml);
+            $('#editor').val(data);
+            myCodeMirror = CodeMirror.fromTextArea(editor);
+          }
+          else{
+              bootbox.alert("Error loading file "+fName);
+          }
+        });
+    }
+   
+      function saveTemplate(fName)
+    {
+        myCodeMirror.save();
+        var fdata = $('#editor').val();
+         _in.api("process_template_data",{todo:"save",fname:fName,fdata:fdata},function(data){
+          if(data!="error"){
+             bootbox.alert("File <b>"+fName+"</b> saved!", function(){loadAll("templates");});
+            }
+          else{
+              bootbox.alert("Error saving file "+fName);
+          }
+        });
+    }
+   
+    function addNew(type)
+    {   
+        var name = '';
+        switch(type)
+        {
+            case "users": name ='New user';
+                break;
+         case "posts": name = 'New post';
+                break;
+         case "pages": name = 'New page';
+                break;
+        }
+        
+         if(type!="users"){
+        var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px; float:right;" class="btn" href="#" onclick="toEasyMode();return false;">Lazy WYSIWYG Mode</a></div></div>';
+         
+         toHtml +='<div style="margin-left: 0px;" class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" class="span4" id="ent_name" onkeyup="trackAlias()" /></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Alias: </h4> <input type="text" class="span4" id="ent_alias" /></div><div style="clear:both;"></div><textarea style="width: 810px; height: 400px;" id="editor"></textarea>';
+         toHtml +='</div>';
+            $("#main_canv").html(toHtml);
+            myCodeMirror = CodeMirror.fromTextArea(editor);
+         }
+          else
+        {
+            var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';  
+            toHtml +='<div style="margin-left: 0px;" class="span4"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" class="span3" id="ent_name"/></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Password: </h4> <input type="text" class="span3" id="ent_password" /></div>';
+            $("#main_canv").html(toHtml);
+        }  
+    }
+    
+    function trackAlias()
+    {
+       var str = $("#ent_name").val();
+       $("#ent_alias").val(str.toLowerCase().replace(new RegExp(" ", "g"), "_"));
+    }
+    
+    function saveNew(type)
+    {
+        
+        if(type!="users"){
+            myCodeMirror.save();
+        var name = $("#ent_name").val();
+        var alias =  $("#ent_alias").val();
+        var text = $('#editor').val();
+        var description = $("#ent_description").val();
+        _in.api('post_page_savings', {name:name,alias:alias,type:type,text:text,description:description},function(data){
+           bootbox.alert(data, function() {
+                if(data == "done"){
+                    loadAll(type);
+                }
+            }); 
+        });
+        }
+        else{
+        var name = $("#ent_name").val();
+        var password =  $("#ent_password").val();
+        _in.api('post_page_savings', {name:name,password:password,type:type},function(data){
+           bootbox.alert(data, function() {
+               if(data == "done"){
+                    loadAll(type);
+                }
+            }); 
+        });
+        
+        }
+    }
+    
+    function deletePPU(type, id)
+    {
+        var todo='delete';
+        _in.api("post_page_editing", {todo:todo, type:type, id:id}, function(data){
+          bootbox.alert(data, function() {
+                if(data == "done"){
+                    loadAll(type);
+                }
+            });
+        });
+    }
+    
+    function editPPU(type, id)
+    {   
+        var todo='opendata';
+        _in.api("post_page_editing", {todo:todo, type:type, id:id}, function(data){
+           openEditor(data, type, id); 
+        });
+    }
+    
+    function openEditor(data, type, id)
+    {   
+        
+        data = $.parseJSON(data);
+        var name = '';
+        switch(type)
+        {
+         case "users": name ='Edit user';
+                break;
+         case "posts": name = 'Edit post';
+                break;
+         case "pages": name = 'Edit page';
+                break;
+        }
+        
+        
+        var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\''+type+'\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a><a style="margin-left: 10px; float:right;" class="btn" href="#" onclick="toEasyMode();return false;">Lazy WYSIWYG Mode</a></div></div>';
+         
+         toHtml +='<div style="margin-left: 0px;" class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" value="'+data[0].name+'" class="span4" id="ent_name" onkeyup="trackAlias()" /></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Alias: </h4> <input type="text" value="'+data[0].alias+'" class="span4" id="ent_alias" /></div><div style="clear:both;"></div><textarea style="width: 810px; height: 400px;" id="editor"></textarea>';
+         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Description: </h4> <input type="text" value="'+data[0].description+'" class="span9" id="ent_description" /></div>';
+         toHtml +='</div>';
+            $("#main_canv").html(toHtml);
+            $('#editor').val(data[0].smalldata+data[0].data);
+      myCodeMirror = CodeMirror.fromTextArea(editor);
+    }
+    
+    function toEasyMode()
+    {
+        myCodeMirror.save();
+        $('#editor').wysihtml5({
+                "html": true,
+                "color": true
+            });
+    }
+    
+    function saveEdited(type, id)
+    {
+        
+       if(type!="users"){
+           myCodeMirror.save();
+           var name = $("#ent_name").val();
+        var alias =  $("#ent_alias").val();
+        var text = $('#editor').val();
+        var description = $("#ent_description").val();
+        var todo='edit';
+        _in.api('post_page_editing', {todo:todo,id:id,name:name,alias:alias,type:type,text:text,description:description},function(data){
+           bootbox.alert(data, function() {
+                if(data == "done"){
+                    loadAll(type);
+                }
+            }); 
+        });
+       }
+       else{
+       var todo = "edit_user_pass";
+       var password = $("#ent_password").val();
+       _in.api('post_page_editing', {todo:todo,id:id,password:password},function(data){
+           bootbox.alert(data, function() {
+                if(data == "done"){
+                    loadAll(type);
+                }
+            }); 
+        });
+       
+       }
+       
+    }
+    
+    function reloadTemplate()
+    {
+        _in.api('reload_template_immediate',function(data){
+           bootbox.alert(data); 
+        });
+    }
+    
+    var plugins;
+    
+    function loadPluginsAdmin()
+    {
+        _in.api("load_plugins_admin", function(data){
+            if(data == "error") {
+                bootbox.alert(data);
+            }
+            else{
+                plugins = JSON.parse(data);
+                var  toHtml ='<h3 style="float: left; margin-right: 40px;">Plugins</h3><div style="margin-top: 15px;"></div><button class="btn btn-inverse" onclick="reloadPlugins()" style="">Reload Plugins</button>';
+                toHtml += '<table class="table"><thead><tr><th>Name</th><th>Author</th><th>Replace</th><th>Source</th><th></th></tr></thead><tbody>';
+                plugins.plugin.forEach(function(plugin){
+                     toHtml += '<tr><td>'+ plugin.name +'</td><td>'+ plugin.author +'</td><td>'+ plugin.content.replace +'</td><td>'+ plugin.content.source +'</td><td><a class="btn" href="#" onclick="showPluginContent(\''+plugin.alias+'\');return false;"><i class="icon-edit"></i></a></td></tr>';
+                });
+                toHtml += '</tbody></table>';
+                $("#main_canv").html(toHtml);
+            }
+        });
+    }
+    
+    function showPluginContent(alias)
+    {
+        if(plugins === undefined)
+        {
+                _in.api("load_plugins_admin", function(data){
+                        if(data == "error") {
+                            bootbox.alert(data);
+                        }
+                        else{
+                            plugins = JSON.parse(data);
+                            showPluginContentProc(alias);
+                        }
+                });
+        }
+        else
+        {
+            showPluginContentProc(alias);
+        }    
+    }
+    
+    function  showPluginContentProc(alias)
+    {
+       var curP;
+        plugins.plugin.forEach(function(plugin){
+                    if(plugin.alias == alias) curP = plugin;
+                });
+        
+        var  toHtml ='<div class="hero-unit"><h3 style="float: left; margin-right: 40px;">Plugin: <span style="font-size: 24px; font-weight: normal;">' + curP.name + '</span></h3> <div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="savePlugin(\'' + alias + '\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'plugins\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div>';
+        
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Name: </h4> <input type="text" value="'+curP.name+'" class="span8" id="plugin_name" /></div>';
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Author: </h4> <input type="text" value="'+curP.author+'" class="span8" id="plugin_author" /></div>';
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Description: </h4> <input type="text" value="'+curP.description+'" class="span8" id="plugin_description" /></div>';
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Replace: </h4> <input type="text" value="'+curP.content.replace+'" class="span8" id="plugin_content_replace" /></div>';
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Code: </h4> <textarea style="height: 500px;  background-color: #fff;" class="span8" id="plugin_content_source" ></textarea></div>';
+        
+        
+        
+        
+        
+        toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Apply to: </h4>';
+        
+        var applPossible=['index','pages','posts'];
+        
+        applPossible.forEach(function(appl){
+            var ch = curP.applyTo.indexOf(appl) != -1 ? 'checked="checked"' : ''; 
+            toHtml +='<label class="checkbox" style="float:left; margin-right: 15px;"><input ' + ch + ' id="chbox_'+ appl +'" type="checkbox"> '+ appl +'</label>';
+        });
+        
+        toHtml +='<span style="color:#999;">(Don\'t forget to put "replacer" to the conforming template)</span></div>';
+        toHtml +='<div style="clear:both;"></div></div>';
+        
+        
+        
+        $("#main_canv").html(toHtml);
+        $('#plugin_content_source').val(curP.content.replaceWith);
+        myCodeMirror = CodeMirror.fromTextArea(plugin_content_source);
+    }
+    function savePlugin(alias)
+    {
+        var name = $("#plugin_name").val();
+        var author = $("#plugin_author").val(); 
+        var description = $("#plugin_description").val();
+        var replace = $("#plugin_content_replace").val();
+        myCodeMirror.save();
+        var replacewith = $("#plugin_content_source").val();
+        var applyto = "";
+        if($("#chbox_index").is(":checked")) applyto += "index";
+        if($("#chbox_pages").is(":checked")) applyto += ",pages";
+        if($("#chbox_posts").is(":checked")) applyto += ",posts";
+        
+        
+        _in.api("save_plugin", {name:name,alias:alias, author:author, description:description, replace:replace, replacewith:replacewith, applyto:applyto}, function(data){
+            bootbox.alert(data, function() {
+                if(data == "done"){
+                    loadAll("plugins");
+                }
+            });
+        });
+    }
+    
+    function reloadPlugins()
+    {
+        _in.api('reload_plugins',function(data){
+           bootbox.alert(data); 
+        });
+    }
+</script>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="{{SITE_URL}}">{{APPNAME}}</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li><a href="#pages" onclick="loadAll('pages');">Pages</a></li>
+              <li><a href="#posts" onclick="loadAll('posts');">Posts</a></li>
+              <li><a href="#users" onclick="loadAll('users');">Users</a></li>
+              <li><a href="#templates" onclick="loadAll('templates');">Templates</a></li>
+              <li><a href="#plugins" onclick="loadPluginsAdmin();">Plugins</a></li>
+            </ul>
+             {{USER_MENU}} 
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container" id="main_canv">
+
+      <h1>InvaNode CMS Admin Panel</h1>
+      <h3>{{APPNAME}} Statistics</h3>
+      <div style="margin-top: 20px;" class="span7">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>Statistics</th>
+                <th>#</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Number of Pages</td>
+                <td>{{NUMBER_OF_PAGES}}</td>
+            </tr>
+            <tr>
+                <td>Number of Posts</td>
+                <td>{{NUMBER_OF_POSTS}}</td>
+            </tr>
+            <tr>
+                <td>Number of Users</td>
+                <td>{{NUMBER_OF_USERS}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+      </table>    
+      </div>    
+    </div> <!-- /container -->
+</body>
+</html>
