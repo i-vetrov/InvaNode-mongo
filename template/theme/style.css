@@ -159,3 +159,59 @@
 #content-container{
     min-height: 516px;
 }
+
+.tags{
+    margin-bottom: 10px;
+}
+.tags span{
+    color: #2F7F5A;
+    font-weight: bold;
+}
+.tags a
+{
+    color: #2F7F5A;
+}
+.tags a:hover
+{
+    color: #2F7F5A;
+}
+.tags span:after{
+    content: ", ";
+}
+.tags span:last-child:after{
+    content: "";
+}
+
+.search-header
+{
+    font-size: 34px;
+    margin-top: 20px;
+}
+
+.search-header span
+{
+    font-weight: bold;
+}
+.nothing-was-found
+{
+    margin-top:40px;
+    font-style: italic;
+}
+
+.pagination
+{
+  margin-top: 20px;
+}
+
+.pagination a 
+{
+  font-size: 15px;
+  margin-right: 10px;
+  padding: 3px 5px 3px 5px;
+  color: #2F7F5A;
+}
+.pagination a.current-page-number
+{
+  background-color: #2F7F5A;
+  color: #fff;
+}

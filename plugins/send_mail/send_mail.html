@@ -1,9 +1,0 @@
-<div onclick="sendingMail()">SEND!</div>
-<script>
-function sendingMail()
-{
-    _in.api('plugin',{alias:'send_mail', call:'done'},function(data){
-        alert(data);
-    });
-}
-</script>

@@ -23,16 +23,21 @@
       }
       .CodeMirror {
         background-color: #fff; 
+        min-height: 450px;
       }
-      .CodeMirror-scroll {
-        height: 650px;
+      .CodeMirror-scroll{
+        min-height: 450px;
+      }
+      .CodeMirror pre
+      {
+         font-size: 14px;
       }
     </style>
   </head>
   <body>
 <script>
-   var myCodeMirror; 
-    String.prototype.replaceAll=function(find, replace_to){
+var myCodeMirror; 
+String.prototype.replaceAll=function(find, replace_to){
      return this.replace(new RegExp(find, "g"), replace_to);
 };
 
@@ -49,6 +54,7 @@ function getLocalImages()
         var i = data.length;
          while(i--)
              {
+                if(data[i].split('.')[data[i].split('.').length-1]!='txt')
                 out +=  '<div style="float:left; padding: 6px; border: 1px solid #ccc; margin:0 10px 10px 0; cursor:pointer;" onclick="insertLocalImage(\''+data[i]+'\')"><img style="height: 100px; width: auto;" src="/images/'+encodeURI(data[i])+'" /></div>'
                
              }
@@ -105,25 +111,56 @@ function addNewImage(event)
         _in.api(todo, function(data){
             var toHtml;
             data = $.parseJSON(data);
-            if(type!="templates"){
-                    toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
-                    toHtml +='<div class="span15">';
-                    toHtml +='<div class="span1" style="min-height:50px;"><h4>ID</h4></div><div class="span7"><h4>Name</h4></div><div class="span3"><h4>Options</h4></div>';
+            if(type!="templates" && type!="users" && type!="categories"){
+                toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
+                toHtml +='<div class="span15">';
+                toHtml +='<div class="span1" style="min-height:50px; width: 20px;"><h4>ID</h4></div><div class="span4"><h4>Name</h4></div><div class="span2"><h4>Author</h4></div><div class="span2"><h4>Published</h4></div><div class="span3"><h4>Options</h4></div>';
+                toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                data.forEach(function(line){
+                    var published;
+                    if(line.published == 0) published = '<span style="font-weight: bold;color: red">NO</span>'
+                    if(line.published == 1) published = '<span style="font-weight: bold;color: green">YES</span>'
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px; width: 20px;">'+line.id+'</div><div class="span4" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}'+line.alias+'" target="_blank">'+line.name+'</a></div>';
+                    toHtml +='<div class="span2" style="min-height: 50px;margin-top: 14px;">'+line.author+'</div>';
+                    toHtml +='<div class="span2" style="min-height: 50px;margin-top: 14px;">'+published+'</div>';
+                    toHtml +='<div class="span3">'+buttonsGroup(type, line.id)+'</div>';
                     toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
-                    data.forEach(function(line){
-                        toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;">'+line.id+'</div><div class="span7" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}'+line.alias+'" target="_blank">'+line.name+'</a></div><div class="span3">'+buttonsGroup(type, line.id)+'</div>';
-                        toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
-                    });
-                    toHtml +='</div>';
+                });
+                toHtml +='</div>';
+            }
+            else if(type == "categories"){
+                toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
+                toHtml +='<div class="span15">';
+                toHtml +='<div class="span1" style="min-height:50px; width: 20px;"><h4>ID</h4></div><div class="span3"><h4>Name</h4></div><div class="span3"><h4>Alias</h4></div><div class="span3"><h4>Parent</h4></div><div class="span2"><h4>Options</h4></div>';
+                toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                data.forEach(function(line){
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px; width: 20px;">'+line.id+'</div><div class="span3" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}category/'+line.alias+'" target="_blank">'+line.name+'</a></div>';
+                    toHtml +='<div class="span3" style="min-height: 50px;margin-top: 14px;">'+line.alias+'</div>';
+                    toHtml +='<div class="span3" style="min-height: 50px;margin-top: 14px;">'+line.parent+'</div>';
+                    toHtml +='<div class="span2">'+buttonsGroup(type, line.id)+'</div>';
+                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                });
+                toHtml +='</div>';
+            }
+            else if(type == "users"){
+                toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
+                toHtml +='<div class="span15">';
+                toHtml +='<div class="span1" style="min-height:50px;"><h4>ID</h4></div><div class="span7"><h4>Name</h4></div><div class="span3"><h4>Options</h4></div>';
+                toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                data.forEach(function(line){
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;">'+line.id+'</div><div class="span7" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}'+line.alias+'" target="_blank">'+line.name+'</a></div><div class="span3">'+buttonsGroup(type, line.id)+'</div>';
+                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                });
+                toHtml +='</div>';
             }
             else{
-                    toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"></div><button class="btn btn-inverse" onclick="reloadTemplate()" style="">Reload Templates</button>';
-                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
-                    var i = data.length;
-                    while(i--){
-                        toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;"></div><div class="span7" style="min-height:50px; margin-top: 14px;">'+data[i]+'</div><div class="span3">'+buttonsGroup(type, data[i])+'</div>';
-                        toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';  
-                    }  
+                toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"></div><button class="btn btn-inverse" onclick="reloadTemplate()" style="">Reload Templates</button>';
+                toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
+                var i = data.length;
+                while(i--){
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;"></div><div class="span7" style="min-height:50px; margin-top: 14px;">'+data[i]+'</div><div class="span3">'+buttonsGroup(type, data[i])+'</div>';
+                    toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';  
+                }  
             }
             $("#main_canv").html(toHtml);
         });
@@ -195,17 +232,72 @@ function addNewImage(event)
             case "pages": name = 'New page';
                  break;
          }
-         if(type!="users"){
+         if(type!="users" && type!="categories"){
          var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
          toHtml +='<div style="margin-left: 0px;" class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" class="span4" id="ent_name" onkeyup="trackAlias()" /></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Alias: </h4> <input type="text" class="span4" id="ent_alias" /></div>';
+         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Tags: </h4> <input type="text" value="" class="span5" id="ent_tags" /><span style="margin-left: 10px;vertical-align: top; font-size: 11px; color: rgba(0,0,0,0.5);">(<span style="vertical-align: top;color:red;">NOTE!</span> Separate tags with spaces only!)</span></div>';
          toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left;line-height: 10px;margin-right: 17px;">Published</h4><label class="checkbox" style="display: inline-block;padding-top: 5px;"><input id="is-published" type="checkbox"></label></div>';
          toHtml +='<textarea style="width: 810px; height: 400px;" id="editor"></textarea>';
          toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Description: </h4> <input type="text" value="" class="span9" id="ent_description" /></div>';
+         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Categories: </h4> <div id="cat-list" style="margin-left: 113px;margin-top: 6px;"></div></div>';
+         toHtml +='<div style="clear:both;"></div>'
+         toHtml +='<div data-wysihtml5-dialog="insertImage" style="display: none;">';
+         toHtml +='<label>';
+         toHtml +='URL: <input data-wysihtml5-dialog-field="src" value="http://">';
+         toHtml +='</label>';
+         toHtml +='<label>';
+         toHtml +='Alternative text: <input data-wysihtml5-dialog-field="alt" value="">';
+         toHtml +='</label>';
          toHtml +='</div>';
+         toHtml +='</div>';
+         _in.api("get_categories", function(catData){
+            catData = $.parseJSON(catData);
+            var catList = '';
+            catData.forEach(function(cat){
+                catList += '<label class="checkbox" style="float:left; margin-left: 10px;"><input class="catCheckbox" type="checkbox" cat-alias="'+cat.alias+'" /> '+cat.name+'</label>';  
+            })
             $("#main_canv").html(toHtml);
+            $("#cat-list").html(catList);
             $('#editor').wysihtml5({
                 "html": true,
                 "color": true
+            });
+            var dialog = new wysihtml5.toolbar.Dialog(
+                document.querySelector("[data-wysihtml5-command='insertImage']"),
+                document.querySelector("[data-wysihtml5-dialog='insertImage']")
+            );
+            dialog.observe("save", function(attributes) {});
+         });
+        }
+        else if(type=="categories"){
+            _in.api("get_categories", function(catData){
+                catData = $.parseJSON(catData);
+                var catList = '';
+                var curParent = {name:"null",alias:"null"}; 
+                catData.forEach(function(cat){
+                    catList += '<li><a onclick="catEditorSetParent(\''+cat.alias+'\', \''+cat.name+'\');return false;" href="#">'+cat.name+'</a></li>';
+                });
+                catList += '<li><a onclick="catEditorSetParent(\'null\',\'null\');return false;" href="#">null</a></li>';
+                var name = 'Edit category';
+                var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\'categories\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'categories\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
+                toHtml +='<div style="font-size: 14px;">';
+                toHtml +='<div>Name: <input id="cat-name" class="input-medium" onkeyup="trackCatAlias()" /></div>';
+                toHtml +='<div>Alias: <input id="cat-alias" class="input-medium" /></div>';
+                toHtml +='<div style="float:left;">Parent (null for root category): </div>'
+                toHtml +='<div class="input-append">'
+                toHtml +='<div class="btn-group">';
+                toHtml +='<input class="input-medium" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
+                toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
+                toHtml +='<span class="caret"></span>';
+                toHtml +='</button>';
+                toHtml +='<ul class="dropdown-menu">';
+                toHtml +=catList;
+                toHtml +='</ul>';
+                toHtml +='</div>';
+                toHtml +='</div>';
+                toHtml +='</div>';
+                toHtml +='</div>';
+                $("#main_canv").html(toHtml);
             });
         }
         else
@@ -222,18 +314,29 @@ function addNewImage(event)
        $("#ent_alias").val(str.toLowerCase().replace(new RegExp(" ", "g"), "_"));
     }
     
+    function trackCatAlias()
+    {
+       var str = $("#cat-name").val();
+       $("#cat-alias").val(str.toLowerCase().replace(new RegExp(" ", "g"), "_"));
+    }
+    
     function saveNew(type)
     {
-        if(type!="users"){
+        if(type!="users" && type!="categories"){
         var name = $("#ent_name").val();
         var alias =  $("#ent_alias").val();
         var text = $('#editor').val();
         var description = $("#ent_description").val();
+        var tags = $("#ent_tags").val();
         var published = 0;
         if($("#is-published").is(':checked')){
             published = 1; 
-        }    
-        _in.api('post_page_savings', {name:name,alias:alias,type:type,text:text,description:description, published:published},function(data){
+        }
+        var categories=[];
+        $(".catCheckbox").each(function(i){
+           if($(this).is(':checked')) categories[categories.length] = $(this).attr("cat-alias");
+        });
+        _in.api('post_page_savings', {name:name,alias:alias,type:type,text:text,description:description,published:published,tags:tags,categories:categories},function(data){
            bootbox.alert(data, function() {
                 if(data == "done"){
                     loadAll(type);
@@ -241,6 +344,19 @@ function addNewImage(event)
             }); 
         });
         }
+        else if(type=="categories"){
+            var parent = $("#appendedDropdownButton").attr("alias-val");
+            var name = $("#cat-name").val();
+            var alias = $("#cat-alias").val();
+            alert(parent)
+            _in.api('post_page_savings', {type:type,name:name,alias:alias,parent:parent},function(data){
+                bootbox.alert(data, function() {
+                    if(data == "done"){
+                        loadAll(type);
+                    }
+                }); 
+            });
+       }
         else{
         var name = $("#ent_name").val();
         var password =  $("#ent_password").val();
@@ -257,13 +373,17 @@ function addNewImage(event)
     
     function deletePPU(type, id)
     {
-        var todo='delete';
-        _in.api("post_page_editing", {todo:todo, type:type, id:id}, function(data){
-          bootbox.alert(data, function() {
-                if(data == "done"){
-                    loadAll(type);
-                }
-            });
+        bootbox.confirm("Do you realy want to delete?", function(confirm){
+            if(confirm){
+                var todo='delete';
+                _in.api("post_page_editing", {todo:todo, type:type, id:id}, function(data){
+                  bootbox.alert(data, function() {
+                        if(data == "done"){
+                            loadAll(type);
+                        }
+                    });
+                });
+            }    
         });
     }
     
@@ -271,7 +391,12 @@ function addNewImage(event)
     {   
         var todo='opendata';
         _in.api("post_page_editing", {todo:todo, type:type, id:id}, function(data){
-           openEditor(data, type, id); 
+               if(type=="categories"){
+                   openCatEditor(data, id);
+               }    
+               else {
+                   openEditor(data, type, id);
+               }    
         });
     }
     
@@ -290,11 +415,22 @@ function addNewImage(event)
          }
          var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\''+type+'\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
          toHtml +='<div style="margin-left: 0px;" class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" value="'+data[0].name+'" class="span4" id="ent_name" onkeyup="trackAlias()" /></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Alias: </h4> <input type="text" value="'+data[0].alias+'" class="span4" id="ent_alias" /></div>';
+         if(!data[0].tags)
+         {
+             data[0].tags = [];
+         }
+         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Tags: </h4> <input type="text" value="'+data[0].tags.join(" ")+'" class="span5" id="ent_tags" /><span style="margin-left: 10px;vertical-align: top; font-size: 11px; color: rgba(0,0,0,0.5);">(<span style="vertical-align: top;color:red;">NOTE!</span> Separate tags with spaces only!)</span></div>';
          var isPublished = '';
          if(data[0].published == 1) isPublished = 'checked="checked"'; 
          toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left;line-height: 10px;margin-right: 17px;">Published</h4><label class="checkbox" style="display: inline-block;padding-top: 5px;"><input '+isPublished+' id="is-published" type="checkbox"></label></div>';
          toHtml +='<textarea style="width: 810px; height: 400px;" id="editor">'+data[0].smalldata+'--CUT--'+data[0].data+'</textarea>';
          toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Description: </h4> <input type="text" value="'+data[0].description+'" class="span9" id="ent_description" /></div>';
+         if(!data[0].categories)
+         {
+             data[0].categories = [];
+         }
+         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="float: left; line-height: 10px; margin-right: 17px;">Categories: </h4> <div id="cat-list" style="margin-left: 113px;margin-top: 6px;"></div></div>';
+         toHtml +='<div style="clear:both;"></div>'
          toHtml +='<div data-wysihtml5-dialog="insertImage" style="display: none;">';
          toHtml +='<label>';
          toHtml +='URL: <input data-wysihtml5-dialog-field="src" value="http://">';
@@ -304,32 +440,59 @@ function addNewImage(event)
          toHtml +='</label>';
          toHtml +='</div>';
          toHtml +='</div>';
-         $("#main_canv").html(toHtml);
-         $('#editor').wysihtml5({
-              "html": true,
-              "color": true
+         _in.api("get_categories", function(catData){
+            catData = $.parseJSON(catData);
+            var catList = '';
+            catData.forEach(function(cat){
+                if(data[0].categories.indexOf(cat.alias)!=-1) var ch = 'checked="checked"';
+                else var ch = '';
+                catList += '<label class="checkbox" style="float:left; margin-left: 10px;"><input class="catCheckbox" '+ch+' type="checkbox" cat-alias="'+cat.alias+'" /> '+cat.name+'</label>';  
+            })
+            $("#main_canv").html(toHtml);
+            $("#cat-list").html(catList);
+            $('#editor').wysihtml5({
+                "html": true,
+                "color": true
+            });
+            var dialog = new wysihtml5.toolbar.Dialog(
+                document.querySelector("[data-wysihtml5-command='insertImage']"),
+                document.querySelector("[data-wysihtml5-dialog='insertImage']")
+            );
+            dialog.observe("save", function(attributes) {});
+         
          });
-         var dialog = new wysihtml5.toolbar.Dialog(
-            document.querySelector("[data-wysihtml5-command='insertImage']"),
-            document.querySelector("[data-wysihtml5-dialog='insertImage']")
-         );
-         dialog.observe("save", function(attributes) {});
     }
     
     function saveEdited(type, id)
     {
-       if(type!="users"){
-           var name = $("#ent_name").val();
-        var alias =  $("#ent_alias").val();
-        var text = $('#editor').val();
-        var description = $("#ent_description").val();
-        var published = 0;
-        if($("#is-published").is(':checked')){
-            published = 1; 
-        }    
-        var todo='edit';
-        _in.api('post_page_editing', {todo:todo,id:id,name:name,alias:alias,type:type,text:text,description:description,published:published},function(data){
-           bootbox.alert(data, function() {
+        if(type!="users" && type!="categories"){
+            var name = $("#ent_name").val();
+            var alias =  $("#ent_alias").val();
+            var text = $('#editor').val();
+            var description = $("#ent_description").val();
+            var tags = $("#ent_tags").val();
+            var published = 0;
+            if($("#is-published").is(':checked')){
+                published = 1; 
+            }
+            var categories=[];
+            $(".catCheckbox").each(function(i){
+                if($(this).is(':checked')) categories[categories.length] = $(this).attr("cat-alias");
+            });
+            var todo='edit';
+            _in.api('post_page_editing', {todo:todo,id:id,name:name,alias:alias,type:type,text:text,description:description,published:published,tags:tags,categories:categories},function(data){
+                bootbox.alert(data, function() {
+                    if(data == "done"){
+                        loadAll(type);
+                    }
+                }); 
+            });
+       }
+       else if(type=="categories"){
+            var todo='edit_category';
+            var parent = $("#appendedDropdownButton").attr("alias-val");
+            _in.api('post_page_editing', {todo:todo,id:id,parent:parent},function(data){
+            bootbox.alert(data, function() {
                 if(data == "done"){
                     loadAll(type);
                 }
@@ -347,6 +510,50 @@ function addNewImage(event)
             }); 
         });
        }
+    }
+    
+    function openCatEditor(data, id)
+    {
+        data = $.parseJSON(data);
+        _in.api("get_categories", function(catData){
+            catData = $.parseJSON(catData);
+            var catList = '';
+            var curParent = {name:"null",alias:"null"}; 
+            catData.forEach(function(cat){
+                catList += '<li><a onclick="catEditorSetParent(\''+cat.alias+'\', \''+cat.name+'\');return false;" href="#">'+cat.name+'</a></li>';
+                if(data[0].parent == cat.alias){
+                    curParent.name = cat.name;
+                    curParent.alias = cat.alias;
+                }
+            });
+            catList += '<li><a onclick="catEditorSetParent(\'null\',\'null\');return false;" href="#">null</a></li>';
+            var name = 'Edit category';
+            var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\'categories\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'categories\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
+            toHtml +='<div style="font-size: 14px;">';
+            toHtml +='<div>Name: <span style="font-weight: bold;">'+data[0].name+'</span></div>';
+            toHtml +='<div>Alias: <span style="font-weight: bold;">'+data[0].alias+'</span></div>';
+            toHtml +='<div style="float:left;">Parent (null for root category): </div>'
+            toHtml +='<div class="input-append">'
+            toHtml +='<div class="btn-group">';
+            toHtml +='<input class="input-medium" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
+            toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
+            toHtml +='<span class="caret"></span>';
+            toHtml +='</button>';
+            toHtml +='<ul class="dropdown-menu">';
+            toHtml +=catList;
+            toHtml +='</ul>';
+            toHtml +='</div>';
+            toHtml +='</div>';
+            toHtml +='</div>';
+            toHtml +='</div>';
+            $("#main_canv").html(toHtml);
+        });
+    }
+    
+    function catEditorSetParent(alias, name)
+    {
+        $("#appendedDropdownButton").val(name);
+        $("#appendedDropdownButton").attr("alias-val",alias);
     }
     
     function reloadTemplate()
@@ -410,7 +617,7 @@ function addNewImage(event)
         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Replace: </h4> <input type="text" value="'+curP.content.replace+'" class="span8" id="plugin_content_replace" /></div>';
         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Code: </h4> <textarea style="height: 500px;  background-color: #fff;" class="span8" id="plugin_content_source" ></textarea></div>';
         toHtml +='<div class="span11" style="margin-left:0;"><h4 style="min-width: 110px;float: left; line-height: 10px; margin-right: 17px;">Apply to: </h4>';
-        var applPossible=['index','pages','posts'];
+        var applPossible=['index','pages','posts','search'];
         applPossible.forEach(function(appl){
             var ch = curP.applyTo.indexOf(appl) != -1 ? 'checked="checked"' : ''; 
             toHtml +='<label class="checkbox" style="float:left; margin-right: 15px; padding-top: 7px;"><input ' + ch + ' id="chbox_'+ appl +'" type="checkbox"> '+ appl +'</label>';
@@ -434,6 +641,7 @@ function addNewImage(event)
         if($("#chbox_index").is(":checked")) applyto += "index";
         if($("#chbox_pages").is(":checked")) applyto += ",pages";
         if($("#chbox_posts").is(":checked")) applyto += ",posts";
+        if($("#chbox_search").is(":checked")) applyto += ",search";
         _in.api("save_plugin", {name:name,alias:alias, author:author, description:description, replace:replace, replacewith:replacewith, applyto:applyto}, function(data){
             bootbox.alert(data, function() {
                 if(data == "done"){
@@ -524,6 +732,7 @@ function addNewImage(event)
               <li><a href="#dashboard" onclick="loadAll('dashboard');">Dashboard</a></li>
               <li><a href="#pages" onclick="loadAll('pages');">Pages</a></li>
               <li><a href="#posts" onclick="loadAll('posts');">Posts</a></li>
+              <li><a href="#categories" onclick="loadAll('categories');">Categories</a></li>
               <li><a href="#users" onclick="loadAll('users');">Users</a></li>
               <li><a href="#templates" onclick="loadAll('templates');">Templates</a></li>
               <li><a href="#plugins" onclick="loadPluginsAdmin();">Plugins</a></li>

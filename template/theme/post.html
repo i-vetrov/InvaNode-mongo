@@ -1,13 +1,13 @@
-<div id="content-container" class="container">
-         <div style="width: 700px; float:left;">
-              <h1>{{POST_NAME}}</h1>  
-              <div class="small-post-date">
-              Posted on <span class="small-post-date-date">{{POST_DATE}}</span>    
-              </div>
-              {{PAGE_CONTENT}}
-         </div>
-	
-  <div style="width:240px; float:right;">
-	{{PLUGIN:LAST_STORIES}}
-  </div>
+<div style="width: 700px; float:left;">
+    <h1>{{POST_NAME}}</h1>  
+    <div class="small-post-date">
+        Posted on <span class="small-post-date-date">{{POST_DATE}}</span>
+        <span class="tags">| Author: {{POST_AUTHOR}}</span>
+        <span class="tags">| Tags: {{POST_TAGS}}</span><br />
+        <span class="tags">Categories: {{POST_CATEGORIES}}</span> 
+    </div>
+    {{PAGE_CONTENT}}
+</div>
+<div style="width:220px; float:right;">
+    {{PLUGIN:LAST_STORIES}}
 </div>

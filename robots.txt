@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api
+Disallow: /login
+Disallow: /logout
+Disallow: /template/
+Disallow: /images/
+Disallow: /plugins/

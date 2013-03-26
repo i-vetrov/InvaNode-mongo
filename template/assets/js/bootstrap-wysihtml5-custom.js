@@ -1,3 +1,14 @@
+/**
+ * @license wysihtml5 v0.3.0
+ * https://github.com/jhollingworth/bootstrap-wysihtml5/blob/master/LICENCE
+ *
+ * Author: James Hollingworth (https://github.com/jhollingworth/)
+ *
+ * Copyright (c) 2012 JFHollingworth LTD
+ * Licensed under the MIT license (MIT)
+ *
+ */
+
 !function($, wysi) {
     "use strict";
 

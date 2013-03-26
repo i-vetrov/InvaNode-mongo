@@ -1,14 +1,62 @@
-<div>Latest posts:</div>
-<div id="last-stories"></div>
+<style>
+.last-stories
+{
+    width: auto;
+    box-shadow: 0px 1px 6px rgba(0,0,0,0.8);
+    border-radius: 5px;
+    margin-top: 50px;
+}
+.last-stories-head
+{
+    background-color: #2F7F5A;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    color: #fff;
+    padding: 10px;
+    font-size: 17px;
+    text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.8);
+}
+.last-stories-body
+{
+    padding: 10px;
+    border: 3px solid #2F7F5A;
+    border-top: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.last-stories-body a
+{
+    color: #315777;
+}
+.last-stories-body a:hover
+{
+    color: #B86344;
+}
+.last-stories-item
+{
+    margin-bottom: 8px;
+}
+.last-stories-item:last-child
+{
+    margin-bottom: 0;
+}  
+</style>
+<div class="last-stories">
+    <div class="last-stories-head">
+        <span>Latest posts:</span>
+    </div>
+    <div id="last-stories" class="last-stories-body"></div>
+</div>
 <script>
-    $(document).ready(function(){
-        _in.api("get_latest_posts",{count: 5},function(data){
-            data = $.parseJSON(data);
-            var i = data.length;
-            while(i--)
-            {
-                $("#last-stories").append('<div><a alias="' + data[i].alias + '" page-type="posts" page-title="'+data[i].name.replaceAll('["]', "\\'")+'" href="/' + data[i].alias + '">' + data[i].name + '</a></div>');
-            }      
-        });
+$(document).ready(function(){
+    _in.api("get_latest_posts",{count: 5},function(data){
+        data = JSON.parse(data);
+        var i = data.length;
+        while(i--)
+        {
+            var url = _in.buildRoutingGraph(data[i].type, data[i]._id, data[i].alias, data[i].categories[0], data[i].time)
+            $("#last-stories").append('<div class="last-stories-item"><a alias="'+url+'" page-alias="' + data[i].alias + '" page-type="posts" page-title="'+data[i].name.replaceAll('["]', "\\'")+'" href="' + siteUrl + url + '">'+data[i].name+'</a></div>');
+        }      
     });
+});
 </script>

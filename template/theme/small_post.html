@@ -1,10 +1,14 @@
 <article class="small-post">
     <div class="small-post-name">
-    <h2><a alias="{{LINK_ALIAS}}" page-type="posts" page-title="{{LINK_TITLE}}" href="{{SMALL_POST_LINK}}" class="small-post-link">{{SMALL_POST_NAME}}</a></h2>   
+    <h2><a alias="{{LINK_ALIAS}}" page-alias="{{PAGE_ALIAS}}" page-type="{{PAGE_TYPE}}" page-title="{{LINK_TITLE}}" href="{{SMALL_POST_LINK}}" class="small-post-link">{{SMALL_POST_NAME}}</a></h2>   
     </div>
     <div class="small-post-date">
-    Posted on <span class="small-post-date-date">{{SMALL_POST_DATE}}</span>    
+        Posted on <span class="small-post-date-date">{{SMALL_POST_DATE}}</span>
+        <span class="tags">| Author: {{POST_AUTHOR}}</span>
+        <span class="tags">| Tags: {{POST_TAGS}}</span><br />
+        <span class="tags">Categories: {{POST_CATEGORIES}}</span>
     </div>
+    
     <div class="small-post-content">
     {{SMALL_POST_CONTENT}}    
     </div>
