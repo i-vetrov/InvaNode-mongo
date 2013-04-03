@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.1
+ * @license InvaNode CMS v0.1.2
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -347,7 +347,7 @@ getIndex = function(data, db, plugins, stepFoo)
 }
 exports.getIndex = getIndex;
 
-loadDashboard = function(db, stepFoo)
+loadDashboard = function(request, db, stepFoo)
 {
   var dashBoard = {
     indexType: '',
@@ -366,7 +366,17 @@ loadDashboard = function(db, stepFoo)
       dashBoard.indexName = "<b>Basic:</b> Latest posts";
       dashBoard.indexPageAlias = "$list_of_posts";
     }
-    stepFoo(dashBoard);
+    db.coutStatistics(request, function(stat){
+      if(stat == 'error') {
+        stepFoo("error");
+      }
+      else{
+        dashBoard.stats = {pages_num:stat.pages_num,
+                           posts_num:stat.posts_num,
+                           users_num:stat.users_num};
+        stepFoo(dashBoard);
+      }
+    });
   });
 }
 exports.loadDashboard = loadDashboard;
@@ -465,7 +475,7 @@ textApi = function(db, template, request, plugins){
           });
           break;
         case "get_index":
-          getIndex(db, plugins, function(data){
+          getIndex(dataStr, db, plugins, function(data){
             callback(data);
           });            
           break;
@@ -482,7 +492,12 @@ textApi = function(db, template, request, plugins){
           getEntityByAuthor(dataStr, db, plugins, function(data){
             callback(data);
           });
-          break;                
+          break;
+        case "search_by_categorie":
+          getEntityByCategory(dataStr, db, plugins, function(data){
+            callback(data);
+          });
+          break;  
         default:
           callback("error");
           break;

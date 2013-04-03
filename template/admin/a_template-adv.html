@@ -109,6 +109,10 @@ function addNewImage(event)
             }
         var todo='load_all_'+type;
         _in.api(todo, function(data){
+            if(data == 'error'){
+              $("#main_canv").html(data);
+              return;
+            }
             var toHtml;
             data = $.parseJSON(data);
             if(type!="templates" && type!="users" && type!="categories"){
@@ -131,12 +135,21 @@ function addNewImage(event)
             else if(type == "categories"){
                 toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
                 toHtml +='<div class="span15">';
-                toHtml +='<div class="span1" style="min-height:50px; width: 20px;"><h4>ID</h4></div><div class="span3"><h4>Name</h4></div><div class="span3"><h4>Alias</h4></div><div class="span3"><h4>Parent</h4></div><div class="span2"><h4>Options</h4></div>';
+                toHtml +='<div class="span1" style="min-height:50px; width: 20px;"><h4>ID</h4></div><div class="span2"><h4>Name</h4></div><div class="span3"><h4>Alias</h4></div><div class="span2"><h4>Parent</h4></div><div class="span1"><h4>On index</h4></div><div class="span1"><h4>In search</h4></div><div class="span2"><h4>Options</h4></div>';
                 toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
                 data.forEach(function(line){
-                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px; width: 20px;">'+line.id+'</div><div class="span3" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}category/'+line.alias+'" target="_blank">'+line.name+'</a></div>';
+                    var onindex;
+                    var searchable;
+                    if(line.onindex == 0) onindex = '<span style="font-weight: bold;color: red">NO</span>'
+                    if(line.onindex == 1) onindex = '<span style="font-weight: bold;color: green">YES</span>'
+                    if(line.searchable == 0) searchable = '<span style="font-weight: bold;color: red">NO</span>'
+                    if(line.searchable == 1) searchable = '<span style="font-weight: bold;color: green">YES</span>'
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px; width: 20px;">'+line.id+'</div>';
+                    toHtml +='<div class="span2" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}category/'+line.alias+'" target="_blank">'+line.name+'</a></div>';
                     toHtml +='<div class="span3" style="min-height: 50px;margin-top: 14px;">'+line.alias+'</div>';
-                    toHtml +='<div class="span3" style="min-height: 50px;margin-top: 14px;">'+line.parent+'</div>';
+                    toHtml +='<div class="span2" style="min-height: 50px;margin-top: 14px;">'+line.parent+'</div>';
+                    toHtml +='<div class="span1" style="min-height: 50px;margin-top: 14px;">'+onindex+'</div>';
+                    toHtml +='<div class="span1" style="min-height: 50px;margin-top: 14px;">'+searchable+'</div>';
                     toHtml +='<div class="span2">'+buttonsGroup(type, line.id)+'</div>';
                     toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
                 });
@@ -145,10 +158,10 @@ function addNewImage(event)
             else if(type == "users"){
                 toHtml ='<h3 style="float: left; margin-right: 40px;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</h3><div style="margin-top: 15px;"><a class="btn btn-primary" href="#" onclick="addNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Add new</a></div>';
                 toHtml +='<div class="span15">';
-                toHtml +='<div class="span1" style="min-height:50px;"><h4>ID</h4></div><div class="span7"><h4>Name</h4></div><div class="span3"><h4>Options</h4></div>';
+                toHtml +='<div class="span1" style="min-height:50px;"><h4>ID</h4></div><div class="span3"><h4>Name</h4></div><div class="span3"><h4>Penname</h4></div><div class="span1"><h4>Level</h4></div><div class="span3"><h4>Options</h4></div>';
                 toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
                 data.forEach(function(line){
-                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;">'+line.id+'</div><div class="span7" style="min-height:50px; margin-top: 14px;"><a href="{{SITE_URL}}'+line.alias+'" target="_blank">'+line.name+'</a></div><div class="span3">'+buttonsGroup(type, line.id)+'</div>';
+                    toHtml +='<div class="span1" style="min-height:50px; margin-top: 14px;">'+line.id+'</div><div class="span3" style="min-height:50px; margin-top: 14px;">'+line.name+'</div><div class="span3" style="min-height:50px; margin-top: 14px;">'+line.penname+'</div><div class="span1" style="min-height:50px; margin-top: 14px;">'+line.level+'</div><div class="span3">'+buttonsGroup(type, line.id)+'</div>';
                     toHtml +='<div style="clear:both; border-top: 1px solid #DDD;"></div>';
                 });
                 toHtml +='</div>';
@@ -169,7 +182,7 @@ function addNewImage(event)
     function buttonsGroup(type, id)
     {
         if(type=='users'){
-            return '<div class="btn-toolbar"><div class="btn-group"><a class="btn btn-primary" href="#" onclick="editUser('+id+');return false;"><i class="icon-pencil icon-white"></i> Change password</a><a class="btn btn-danger" href="#" onclick="deletePPU(\''+type+'\', '+id+');return false;"><i class="icon-remove"></i></a></div></div>';
+            return '<div class="btn-toolbar"><div class="btn-group"><a class="btn btn-primary" href="#" onclick="editUser('+id+');return false;"><i class="icon-pencil icon-white"></i> Edit</a><a class="btn btn-danger" href="#" onclick="deletePPU(\''+type+'\', '+id+');return false;"><i class="icon-remove"></i></a></div></div>';
         }
         else if(type=='templates'){
             return '<div class="btn-toolbar"><div class="btn-group"><a class="btn" href="#" onclick="editTemplate(\''+id+'\');return false;"><i class="icon-edit"></i></a></div></div>';
@@ -179,13 +192,33 @@ function addNewImage(event)
         }
     }
     
-    function editUser(id, userName)
+    function editUser(id)
     {   
-        var type="users";
-        var name ='Change password';
-        var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\''+type+'\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';  
-            toHtml +='<div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">New password: </h4> <input type="text" class="span3" id="ent_password" /></div>';
-            $("#main_canv").html(toHtml);
+        _in.api("load_all_users", function(data){
+          data = JSON.parse(data);
+          var level;
+          data.forEach(function(d){
+            if(d._id == id) level = d.level;
+          })
+          var type="users";
+          var name ='User';
+          var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\''+type+'\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';  
+              toHtml +='<div class="span10" style="margin-left: 0;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">New password: </h4> <input type="text" class="span3" id="ent_password" /><span style="font-size:14px; color:#ccc;top: -6px;position: relative;left: 10px;">(Leave empty if you don\'t want to change password)</span></div>';
+              toHtml +='<div style="clear:both;"></div>';
+              toHtml +='<div class="span5" style="margin-left: 0;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Level: </h4>';
+              toHtml +='<div class="input-append">'
+              toHtml +='<div class="btn-group">';
+              toHtml +='<input class="span2" style="color:#000; cursor:default; background-color: #fff;" id="appendedDropdownButton" type="text" value="'+level+'"></input>';
+              toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
+              toHtml +='<span class="caret"></span>';
+              toHtml +='</button>';
+              toHtml +='<ul class="dropdown-menu">';
+              toHtml +='<li><a onclick="setUserLevel(0);return false" href="#">0</a></li><li><a onclick="setUserLevel(1);return false" href="#">1</a></li><li><a onclick="setUserLevel(2);return false" href="#">2</a></li><li><a onclick="setUserLevel(3);return false" href="#">3</a></li><li><a onclick="setUserLevel(4);return false" href="#">4</a></li>';
+              toHtml +='</ul>';
+              toHtml +='</div>';
+              toHtml +='</div>';
+              $("#main_canv").html(toHtml);
+        });
     }
     
     function editTemplate(fName)
@@ -271,15 +304,17 @@ function addNewImage(event)
                     catList += '<li><a onclick="catEditorSetParent(\''+cat.alias+'\', \''+cat.name+'\');return false;" href="#">'+cat.name+'</a></li>';
                 });
                 catList += '<li><a onclick="catEditorSetParent(\'null\',\'null\');return false;" href="#">null</a></li>';
-                var name = 'Edit category';
+                var name = 'New category';
                 var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\'categories\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'categories\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
                 toHtml +='<div style="font-size: 14px;">';
-                toHtml +='<div>Name: <input id="cat-name" class="input-medium" onkeyup="trackCatAlias()" /></div>';
-                toHtml +='<div>Alias: <input id="cat-alias" class="input-medium" /></div>';
-                toHtml +='<div style="float:left;">Parent (null for root category): </div>'
+                toHtml +='<div><div style="float:left;width: 130px;"><h4>Name:</h4></div><div><input id="cat-name" type="text" class="span4" onkeyup="trackCatAlias()" /></div></div>';
+                toHtml +='<div><div style="float:left;width: 130px;"><h4>Alias:</h4></div><div><input id="cat-alias" type="text" class="span4" /></div></div>';
+                toHtml +='<div><div style="float:left;width: 130px;"><h4>On Index:</h4></div><div><input id="cat-onindex" type="checkbox" /></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left;width: 130px;"><h4>Searchable:</h4></div><div><input id="cat-searchable" checked="checked" type="checkbox" /></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left; width: 130px;"><h4>Parent:</h4><br /></div>'
                 toHtml +='<div class="input-append">'
                 toHtml +='<div class="btn-group">';
-                toHtml +='<input class="input-medium" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
+                toHtml +='<input class="span4" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
                 toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
                 toHtml +='<span class="caret"></span>';
                 toHtml +='</button>';
@@ -287,18 +322,41 @@ function addNewImage(event)
                 toHtml +=catList;
                 toHtml +='</ul>';
                 toHtml +='</div>';
-                toHtml +='</div>';
+                toHtml +='</div><span style="margin: -3px 0 0 10px;">(null for root)</span></div>';
                 toHtml +='</div>';
                 toHtml +='</div>';
                 $("#main_canv").html(toHtml);
             });
         }
-        else
+        else if(type=="users")
         {
             var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+' editor</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveNew(\''+type+'\');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\''+type+'\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';  
-            toHtml +='<div style="margin-left: 0px;" class="span4"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4> <input type="text" class="span3" id="ent_name"/></div><div class="span5"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Password: </h4> <input type="text" class="span3" id="ent_password" /></div>';
+            toHtml +='<div class="span2" style="margin-left: 0px;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Name: </h4></div><div><input type="text" class="span3" id="ent_name"/></div>';
+            toHtml +='<div style="clear:both;"></div>';
+            toHtml +='<div class="span2" style="margin-left: 0;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Password: </h4></div><div><input type="text" class="span3" id="ent_password" /></div>';
+            toHtml +='<div style="clear:both;"></div>';
+            toHtml +='<div class="span2" style="margin-left: 0;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Penname: </h4></div><div><input type="text" class="span3" id="ent_penname" /></div>';
+            toHtml +='<div style="clear:both;"></div>';
+            toHtml +='<div class="span2" style="margin-left: 0;"><h4 style="float: left; line-height: 10px; margin-right: 10px;">Level: </h4></div><div>';
+            toHtml +='<div class="input-append">'
+            toHtml +='<div class="btn-group">';
+            toHtml +='<input class="span2" style="color:#000; cursor:default; background-color: #fff;" id="appendedDropdownButton" type="text" value="0"></input>';
+            toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
+            toHtml +='<span class="caret"></span>';
+            toHtml +='</button>';
+            toHtml +='<ul class="dropdown-menu">';
+            toHtml +='<li><a onclick="setUserLevel(0);return false" href="#">0</a></li><li><a onclick="setUserLevel(1);return false" href="#">1</a></li><li><a onclick="setUserLevel(2);return false" href="#">2</a></li><li><a onclick="setUserLevel(3);return false" href="#">3</a></li><li><a onclick="setUserLevel(4);return false" href="#">4</a></li>';
+            toHtml +='</ul>';
+            toHtml +='</div>';
+            toHtml +='</div>';
+            toHtml +='</div>';
             $("#main_canv").html(toHtml);
         }    
+    }
+    
+    function setUserLevel(lvl)
+    {
+      $("#appendedDropdownButton").val(lvl);
     }
     
     function trackAlias()
@@ -315,7 +373,7 @@ function addNewImage(event)
     
     function saveNew(type)
     {
-        myCodeMirror.save();
+        if(myCodeMirror) myCodeMirror.save();
         if(type!="users" && type!="categories"){
         var name = $("#ent_name").val();
         var alias =  $("#ent_alias").val();
@@ -341,9 +399,16 @@ function addNewImage(event)
         else if(type=="categories"){
             var parent = $("#appendedDropdownButton").attr("alias-val");
             var name = $("#cat-name").val();
+            var onindex = 0;
+            if($("#cat-onindex").is(':checked')){
+                onindex = 1; 
+            }
+            var searchable = 0;
+            if($("#cat-searchable").is(':checked')){
+                searchable = 1; 
+            }
             var alias = $("#cat-alias").val();
-            alert(parent)
-            _in.api('post_page_savings', {type:type,name:name,alias:alias,parent:parent},function(data){
+            _in.api('post_page_savings', {type:type,name:name,alias:alias,parent:parent,onindex:onindex,searchable:searchable},function(data){
                 bootbox.alert(data, function() {
                     if(data == "done"){
                         loadAll(type);
@@ -351,17 +416,18 @@ function addNewImage(event)
                 }); 
             });
        }
-        else{
-        var name = $("#ent_name").val();
-        var password =  $("#ent_password").val();
-        _in.api('post_page_savings', {name:name,password:password,type:type},function(data){
-           bootbox.alert(data, function() {
-               if(data == "done"){
-                    loadAll(type);
-                }
-            }); 
-        });
-        
+        else if(type=="users"){
+          var name = $("#ent_name").val();
+          var password =  $("#ent_password").val();
+          var level = $("#appendedDropdownButton").val();
+          var penname = $("#ent_penname").val();
+          _in.api('post_page_savings', {name:name,password:password,type:type,level:level,penname:penname},function(data){
+             bootbox.alert(data, function() {
+                 if(data == "done"){
+                      loadAll(type);
+                  }
+              }); 
+          }); 
         }
     }
     
@@ -480,7 +546,15 @@ function addNewImage(event)
        else if(type=="categories"){
             var todo='edit_category';
             var parent = $("#appendedDropdownButton").attr("alias-val");
-            _in.api('post_page_editing', {todo:todo,id:id,parent:parent},function(data){
+            var onindex = 0;
+            if($("#cat-onindex").is(':checked')){
+                onindex = 1; 
+            }
+            var searchable = 0;
+            if($("#cat-searchable").is(':checked')){
+                searchable = 1; 
+            }
+            _in.api('post_page_editing', {todo:todo,id:id,parent:parent,onindex:onindex,searchable:searchable},function(data){
             bootbox.alert(data, function() {
                 if(data == "done"){
                     loadAll(type);
@@ -488,16 +562,17 @@ function addNewImage(event)
             }); 
         });
        }
-       else{
-       var todo = "edit_user_pass";
-       var password = $("#ent_password").val();
-       _in.api('post_page_editing', {todo:todo,id:id,password:password},function(data){
-           bootbox.alert(data, function() {
-                if(data == "done"){
-                    loadAll(type);
-                }
-            }); 
-        });
+       else if(type=="users"){
+         var todo = "edit_user_pass";
+         var password = $("#ent_password").val();
+         var level = $("#appendedDropdownButton").val();
+         _in.api('post_page_editing', {todo:todo,id:id,password:password,level:level},function(data){
+             bootbox.alert(data, function() {
+                  if(data == "done"){
+                      loadAll(type);
+                  }
+              }); 
+         });
        }
     }
     
@@ -517,25 +592,35 @@ function addNewImage(event)
             });
             catList += '<li><a onclick="catEditorSetParent(\'null\',\'null\');return false;" href="#">null</a></li>';
             var name = 'Edit category';
+            var onindex = '';
+            if(data[0].onindex == 1){
+                onindex = 'checked="checked"'
+            }
+            var searchable = '';
+            if(data[0].searchable == 1){
+                searchable = 'checked="checked"'
+            }
             var toHtml = '<div class="hero-unit"><div style="margin-bottom: 30px;"><h2 style="float: left; margin-right: 40px;">'+name+'</h2><div style="padding-top: 15px;"><a class="btn btn-primary" href="#" onclick="saveEdited(\'categories\', '+id+');return false;"><i class="icon-pencil icon-white"></i> Save</a><a style="margin-left: 10px;" class="btn btn-danger" href="#" onclick="loadAll(\'categories\');return false;"><i class="icon-remove icon-white"></i> Cancel</a></div></div>';
-            toHtml +='<div style="font-size: 14px;">';
-            toHtml +='<div>Name: <span style="font-weight: bold;">'+data[0].name+'</span></div>';
-            toHtml +='<div>Alias: <span style="font-weight: bold;">'+data[0].alias+'</span></div>';
-            toHtml +='<div style="float:left;">Parent (null for root category): </div>'
-            toHtml +='<div class="input-append">'
-            toHtml +='<div class="btn-group">';
-            toHtml +='<input class="input-medium" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
-            toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
-            toHtml +='<span class="caret"></span>';
-            toHtml +='</button>';
-            toHtml +='<ul class="dropdown-menu">';
-            toHtml +=catList;
-            toHtml +='</ul>';
-            toHtml +='</div>';
-            toHtml +='</div>';
-            toHtml +='</div>';
-            toHtml +='</div>';
-            $("#main_canv").html(toHtml);
+                toHtml +='<div style="font-size: 14px;">';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left;width: 130px;"><h4>Name:</h4></div><div><span style="font-weight: bold;">'+data[0].name+'</span></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left;width: 130px;"><h4>Alias:</h4></div><div><span style="font-weight: bold;">'+data[0].alias+'</span></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left;width: 130px;"><h4>On Index:</h4></div><div><input id="cat-onindex" '+onindex+' type="checkbox" /></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left;width: 130px;"><h4>Searchable:</h4></div><div><input id="cat-searchable" '+searchable+' type="checkbox" /></div></div>';
+                toHtml +='<div style="margin-top: 10px;"><div style="float:left; width: 130px;"><h4>Parent:</h4><br /></div>'
+                toHtml +='<div class="input-append">'
+                toHtml +='<div class="btn-group">';
+                toHtml +='<input class="span4" style="color:#000; cursor:default; background-color: #fff;" alias-val="'+curParent.alias+'" id="appendedDropdownButton" type="text" value="'+curParent.name+'"></input>';
+                toHtml +='<button class="btn dropdown-toggle" data-toggle="dropdown">';
+                toHtml +='<span class="caret"></span>';
+                toHtml +='</button>';
+                toHtml +='<ul class="dropdown-menu">';
+                toHtml +=catList;
+                toHtml +='</ul>';
+                toHtml +='</div>';
+                toHtml +='</div><span style="margin: -3px 0 0 10px;">(null for root)</span></div>';
+                toHtml +='</div>';
+                toHtml +='</div>';
+                $("#main_canv").html(toHtml);
         });
     }
     
@@ -650,6 +735,10 @@ function addNewImage(event)
     function loadDashboard()
     {
         _in.api("load_dashboard", function(data){
+            if(data == "error"){
+              $("#main_canv").html(data);
+              return;
+            }
             data = $.parseJSON(data);
             _in.api("load_all_pages", function(pages){
                 var options = '<li><a onclick="preSetOption(\'index_page\', \'$list_of_posts\', \'<b>Basic:</b> Latest posts</a>\'); return false;" href="#"><b>Basic:</b> Latest posts</a></li>';
@@ -660,7 +749,11 @@ function addNewImage(event)
                 }    
                 var  toHtml ='<div class="hero-unit"><h3 style="float: left; margin-right: 40px;">Dashboard</h3>';
                 toHtml +='<div style="clear:both;"></div>';
-                toHtml +='<div class="span10">';
+                toHtml += '<div style="width: 461px;font-size: 15px;"><table class="table"><thead><tr><th>Statistics</th><th>#</th></tr></thead>' +
+                           '<tbody><tr><td>Number of Pages</td><td>{{NUMBER_OF_PAGES}}</td></tr><tr><td>Number of Posts'+
+                           '</td><td>{{NUMBER_OF_POSTS}}</td></tr><tr><td>Number of Users</td><td>{{NUMBER_OF_USERS}}'+
+                           '</td></tr><tr><td></td><td></td></tr></tbody></table></div>';
+                toHtml +='<div class="span10" style="margin-left: 10px;">';
                 toHtml +='<div class="input-append">';
                 toHtml +='<label style="float:left; padding-top: 5px; margin-right: 40px;" class="control-label" for="appendedDropdownButton">Index content: </label>';
                 toHtml +='<span class="input-xlarge uneditable-input" style="color:#000; cursor:default; background-color: #fff;" readonly="readonly" id="appendedDropdownButton" type="text">'+data.indexName+'</span>';
@@ -677,7 +770,9 @@ function addNewImage(event)
                 toHtml +='Save';
                 toHtml +='</button>';
                 toHtml += '</div>';
-                $("#main_canv").html(toHtml);
+                $("#main_canv").html(toHtml.replaceAll("{{NUMBER_OF_PAGES}}", data.stats.pages_num)
+                          .replaceAll("{{NUMBER_OF_POSTS}}", data.stats.posts_num)
+                          .replaceAll("{{NUMBER_OF_USERS}}", data.stats.users_num));
             });
         });
     }
@@ -705,7 +800,9 @@ function addNewImage(event)
             break;
         }
     }
-    
+$(document).ready(function(){
+  $("li.up"+userLevel).css("display","list-item")
+})    
 </script>
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
@@ -718,51 +815,24 @@ function addNewImage(event)
           <a class="brand" href="{{SITE_URL}}">{{APPNAME}}</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li><a href="#dashboard" onclick="loadAll('dashboard');">Dashboard</a></li>
-              <li><a href="#pages" onclick="loadAll('pages');">Pages</a></li>
-              <li><a href="#posts" onclick="loadAll('posts');">Posts</a></li>
-              <li><a href="#categories" onclick="loadAll('categories');">Categories</a></li>
-              <li><a href="#users" onclick="loadAll('users');">Users</a></li>
-              <li><a href="#templates" onclick="loadAll('templates');">Templates</a></li>
-              <li><a href="#plugins" onclick="loadPluginsAdmin();">Plugins</a></li>
+              <li class="up0" style="display:none;"><a href="#dashboard" onclick="loadAll('dashboard');">Dashboard</a></li>
+              <li class="up0 up1 up2" style="display:none;"><a href="#pages" onclick="loadAll('pages');">Pages</a></li>
+              <li class="up0 up1 up2 up3" style="display:none;"><a href="#posts" onclick="loadAll('posts');">Posts</a></li>
+              <li class="up0 up1" style="display:none;"><a href="#categories" onclick="loadAll('categories');">Categories</a></li>
+              <li class="up0" style="display:none;"><a href="#users" onclick="loadAll('users');">Users</a></li>
+              <li class="up0" style="display:none;"><a href="#templates" onclick="loadAll('templates');">Templates</a></li>
+              <li class="up0" style="display:none;"><a href="#plugins" onclick="loadPluginsAdmin();">Plugins</a></li>
             </ul>
              {{USER_MENU}} 
           </div><!--/.nav-collapse -->
         </div>
       </div>
     </div>
-
     <div class="container" id="main_canv">
-
       <h1>InvaNode CMS Admin Panel</h1>
-      <h3>{{APPNAME}} Statistics</h3>
-      <div style="margin-top: 20px;" class="span7">
-      <table class="table">
-        <thead>
-            <tr>
-                <th>Statistics</th>
-                <th>#</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Number of Pages</td>
-                <td>{{NUMBER_OF_PAGES}}</td>
-            </tr>
-            <tr>
-                <td>Number of Posts</td>
-                <td>{{NUMBER_OF_POSTS}}</td>
-            </tr>
-            <tr>
-                <td>Number of Users</td>
-                <td>{{NUMBER_OF_USERS}}</td>
-            </tr>
-            <tr>
-                <td></td>
-                <td></td>
-            </tr>
-        </tbody>
-      </table>    
+      <h3>Hello, {{USER_NAME}}</h3>
+      <div style="margin-left: 0px;" class="span7">
+        Select the menu item above to start.
       </div>    
     </div> <!-- /container -->
 </body>

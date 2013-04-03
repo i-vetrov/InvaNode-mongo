@@ -2,7 +2,7 @@
   "name": "InvaNodeCMS-mongo",
   "description": "IvaNode - open source content management system based on Node.js",
   "keywords": ["InvaNode", "node.js", "CMS"],
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Ivan Vetrov <i.vetrov@gmail.com>, Invatechs <info@invatechs.com>",
   "repository": {
     "type" :  "git",

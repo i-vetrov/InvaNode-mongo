@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.1
+ * @license InvaNode CMS v0.1.2
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -17,7 +17,7 @@
 exports.vars = new Object({
       title: 'InvaNode CMS',
       appName: 'InvaNode CMS',
-      siteUrl: 'http://www.invanode.org/',
+      siteUrl: 'http://192.168.0.102/',
       indexDescription: 'IvaNode - open source blogging content management system based on Node.js',
       dbHost: 'localhost',
       dbName: 'invanode',
@@ -25,7 +25,7 @@ exports.vars = new Object({
       dbPass: '',
       dbPort: 27017,
       serverListenPort: 80,
-      serverListenIP: 'localhost' 
+      serverListenIP: '192.168.0.102' 
 });
 
 //
@@ -40,14 +40,14 @@ exports.vars = new Object({
 // 
 // ****N.B.!     Routing graph has to finish with :alias!      N.B.!****
 //
-exports.routingGraph = ':year/:monthnum/:day/:alias';
+exports.routingGraph = ':category/:year/:monthnum/:day/:alias';
 
 
 //
 // Set up the number of posts per page for pagination
 // (set to Infinity to avoid limitation, if you really need this):
 //
-exports.numPostPerPage = 10;
+exports.numPostPerPage = 5;
 
 //
 // Set up the filename of script which is loaded for admin panel

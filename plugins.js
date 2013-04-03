@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.1
+ * @license InvaNode CMS v0.1.2
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -143,7 +143,10 @@ exports.fire = function(template, place, stepFoo){
       catch(e){
         template = template.replaceAll(plugin.content.replace, plugin.content.replaceWith);
       }
-    }  
+    }
+    else{
+      template = template.replaceAll(plugin.content.replace, '');
+    }
   });
   stepFoo(template);   
 };

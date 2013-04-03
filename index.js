@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.1
+ * @license InvaNode CMS v0.1.2
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -15,6 +15,7 @@ var options = require("./options");
 var db = require("./db");
 var api = require("./api");
 var plugins = require("./plugins");
+var cache = require("./cache");
 var http = require("http");
 var crypto = require('crypto');
 var path = require('path');
@@ -23,50 +24,42 @@ var url = require("url");
 var querystring = require("querystring");
 var routingGraph = options.routingGraph;
 
-function respDone(response)
-{
+function respDone(response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end('done');
 }
 
-function respError(response)
-{
+function respError(response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end('error');
 }
-    
-function respGoIndex(response)
-{
+
+function respGoIndex(response) {
   response.writeHead(200, {"Content-Type": "text/html"});
   response.end('<script>window.location.href = "/";</script>');
 }
-    
-function respShow404(response)
-{
+
+function respShow404(response) {
   response.writeHead(404, {"Content-Type": "text/html"});
   response.end(template.page404);
 }
 
-function respTrue(response)
-{
+function respTrue(response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end('true');
 }
 
-function respFalse(response)
-{
+function respFalse(response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end('false');
 }
 
-function respData(data, response)
-{
+function respData(data, response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end(data);
 }
 
-function respJSON(data, response)
-{
+function respJSON(data, response) {
   try{
     response.writeHead(200, {"Content-Type": "text/plain"});
     response.end(JSON.stringify(data));
@@ -77,48 +70,49 @@ function respJSON(data, response)
   }
 }
 
-function respShow301(location, response)
-{
+function respShow301(location, response) {
   response.writeHead(301, {"Location":location});
   response.end();
 }
 
-function Template()
-{
-  this.header = fs.readFileSync(__dirname+"/template/theme/header.html", 'utf-8'); 
-  this.index = fs.readFileSync(__dirname+"/template/theme/index.html", 'utf-8');
-  this.page = fs.readFileSync(__dirname+"/template/theme/page.html", 'utf-8');
-  this.post = fs.readFileSync(__dirname+"/template/theme/post.html", 'utf-8');
-  this.footer = fs.readFileSync(__dirname+"/template/theme/footer.html", 'utf-8');
-  this.small_post = fs.readFileSync(__dirname+"/template/theme/small_post.html", 'utf-8');
-  this.page404 = fs.readFileSync(__dirname+"/template/theme/404.html", 'utf-8');
-  this.loginpage = fs.readFileSync(__dirname+"/template/theme/loginpage.html", 'utf-8');
-  this.style = fs.readFileSync(__dirname+"/template/theme/style.css", 'utf-8');
-  this.jquery = fs.readFileSync(__dirname+"/template/assets/js/jquery.js", 'utf-8');
-  this.injs = fs.readFileSync(__dirname+"/template/assets/js/in.js", 'utf-8');
-  this.search = fs.readFileSync(__dirname+"/template/theme/search.html", 'utf-8');
-  this.reloadTemplate = function(request, response)
-  {
+function Template() {
+  this.initTemplate = function(stepFoo) {
+    var context = this;
+    try{
+      context.header = fs.readFileSync(__dirname+"/template/theme/header.html", 'utf-8'); 
+      context.index = fs.readFileSync(__dirname+"/template/theme/index.html", 'utf-8');
+      context.page = fs.readFileSync(__dirname+"/template/theme/page.html", 'utf-8');
+      context.post = fs.readFileSync(__dirname+"/template/theme/post.html", 'utf-8');
+      context.footer = fs.readFileSync(__dirname+"/template/theme/footer.html", 'utf-8');
+      context.small_post = fs.readFileSync(__dirname+"/template/theme/small_post.html", 'utf-8');
+      context.page404 = fs.readFileSync(__dirname+"/template/theme/404.html", 'utf-8');
+      context.loginpage = fs.readFileSync(__dirname+"/template/theme/loginpage.html", 'utf-8');
+      context.style = fs.readFileSync(__dirname+"/template/theme/style.css", 'utf-8');
+      context.jquery = fs.readFileSync(__dirname+"/template/assets/js/jquery.js", 'utf-8');
+      context.injs = fs.readFileSync(__dirname+"/template/assets/js/in.js", 'utf-8');
+      context.search = fs.readFileSync(__dirname+"/template/theme/search.html", 'utf-8');
+      if(stepFoo){
+        stepFoo(false);
+      }
+    }catch (exception_var){
+      console.log('reloading template error: '+exception_var);
+      if(stepFoo){
+        stepFoo(true);
+      }
+    }
+  };
+  this.reloadTemplate = function(request, response) {
     var context = this;
     db.loggedIn(request, function(check, userObj){              
-      if(check){
-        try{
-          context.header = fs.readFileSync(__dirname+"/template/theme/header.html", 'utf-8'); 
-          context.index = fs.readFileSync(__dirname+"/template/theme/index.html", 'utf-8');
-          context.page = fs.readFileSync(__dirname+"/template/theme/page.html", 'utf-8');
-          context.post = fs.readFileSync(__dirname+"/template/theme/post.html", 'utf-8');
-          context.footer = fs.readFileSync(__dirname+"/template/theme/footer.html", 'utf-8');
-          context.small_post = fs.readFileSync(__dirname+"/template/theme/small_post.html", 'utf-8');
-          context.page404 = fs.readFileSync(__dirname+"/template/theme/404.html", 'utf-8');
-          context.loginpage = fs.readFileSync(__dirname+"/template/theme/loginpage.html", 'utf-8');
-          context.style = fs.readFileSync(__dirname+"/template/theme/style.css", 'utf-8');
-          context.jquery = fs.readFileSync(__dirname+"/template/assets/js/jquery.js", 'utf-8');
-          context.injs = fs.readFileSync(__dirname+"/template/assets/js/in.js", 'utf-8');
-          context.search = fs.readFileSync(__dirname+"/template/theme/search.html", 'utf-8');
-          respDone(response);
-        }catch (exception_var){
-          console.log('reloading template error: '+exception_var);
-        }
+      if(check && userObj.level == 0){
+        context.initTemplate(function(error){
+          if(!error){
+            respDone(response);
+          }
+          else{
+            respError(response);
+          }
+        });
       }
       else{
         respGoIndex(response);
@@ -129,18 +123,18 @@ function Template()
 }
 
 var template = new Template();
+template.initTemplate();
 console.log('InvaNode started');
 
-String.prototype.replaceAll=function(find, replace_to){
+String.prototype.replaceAll = function(find, replace_to) {
   return this.replace(new RegExp(find, "g"), replace_to);
 };
 
-String.prototype.md5=function(){
+String.prototype.md5 = function() {
   return crypto.createHash('md5').update(this).digest("hex");
 };
 
-function getDate(raw)
-{
+function getDate(raw) {
   var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   var date = '<span class="date-d">' + raw.getDate() + '</span> <span class="date-m">' + 
@@ -149,7 +143,7 @@ function getDate(raw)
   return date;
 }
 
-function getPagination(curPage, count){
+function getPagination(curPage, count) {
   var out = '';
   var numPages = Math.ceil(count/options.numPostPerPage);
   if(numPages == 1) {
@@ -158,16 +152,25 @@ function getPagination(curPage, count){
   else{
     for(var i = 1; i <= numPages; i++)
     {
-      var add = '';
-      if(i==curPage) add = 'class="current-page-number"'
-      out += '<a ' + add + ' page-type="pagination" href="?page=' + i + '">' + i + '</a>'
+      if(i==curPage) out +='<span page-type="pagination" class="current-page-number a">'+i+'</span>'
+      else out += '<a page-type="pagination" alias="?page=' +  i + 
+                  '" page-pagenum="' + i + '" href="?page=' + i + '">' + i + '</a>'
     }
     return out;
   }
 }
 
-function popTemplate(request, response, urlQuery, fname, dname)
-{   
+function getCategorization() {  
+  db.getCategories(function(data){
+    data.forEach(function(cat){
+      if(cat.perrent !="null"){
+        db.categorization[cat.alias] = cat;
+      }
+    });
+  });
+} 
+
+function popTemplate(request, response, urlQuery, fname, dname) {   
   var forbiddenAlias = ["api", "login", "logout", "admin"];
   if(forbiddenAlias.indexOf(fname) != -1){
     respShow404(response);
@@ -298,23 +301,17 @@ function popTemplate(request, response, urlQuery, fname, dname)
   });                 
 }
 
-function popAdminTemplate(userObj, request, response)
-{       
+function popAdminTemplate(userObj, request, response) {       
   try{
     var logged = fs.readFileSync(__dirname+"/template/admin/logged.html", 'utf-8');
     var admin =  fs.readFileSync(__dirname+"/template/admin/" + options.adminTemplate, 'utf-8');
-    db.coutStatistics(function(results){
-      response.writeHead(200, {"Content-Type": "text/html"});
-      response.write(admin.replaceAll("{{APPNAME}}", options.vars.appName)
-                          .replaceAll("{{SITE_URL}}", options.vars.siteUrl)
-                          .replaceAll("{{USER_MENU}}", logged
-                          .replaceAll("{{USER_NAME}}", userObj.name)
-                          .replaceAll("{{USER_LEVEL}}", userObj.level))
-                          .replaceAll("{{NUMBER_OF_PAGES}}", results.pages_num)
-                          .replaceAll("{{NUMBER_OF_POSTS}}", results.posts_num)
-                          .replaceAll("{{NUMBER_OF_USERS}}", results.users_num));
-      response.end();
-    });
+    response.writeHead(200, {"Content-Type": "text/html"});
+    response.write(admin.replaceAll("{{APPNAME}}", options.vars.appName)
+                        .replaceAll("{{SITE_URL}}", options.vars.siteUrl)
+                        .replaceAll("{{USER_MENU}}", logged)
+                        .replaceAll("{{USER_NAME}}", userObj.name)
+                        .replaceAll("{{USER_LEVEL}}", userObj.level));
+    response.end();
   }    
   catch(e){
     respShow404(response);
@@ -322,8 +319,7 @@ function popAdminTemplate(userObj, request, response)
   }    
 }
 
-function getLocalImages(stepFoo)
-{ 
+function getLocalImages(stepFoo) { 
   fs.readdir(__dirname+"/images",function(error, files){
     if(error){
       console.log(error);
@@ -335,8 +331,7 @@ function getLocalImages(stepFoo)
   });
 }
 
-function buildRoutingGraph(type, id, alias, category, date)
-{
+function buildRoutingGraph(type, id, alias, category, date) {
   var monthnum = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
   var url = routingGraph.replaceAll(":category", category)
                         .replaceAll(":alias", alias)
@@ -347,8 +342,7 @@ function buildRoutingGraph(type, id, alias, category, date)
   return url;            
 }
 
-function getPageContent(fname, dname, pagination, stepFoo)
-{
+function getPageContent(fname, dname, pagination, stepFoo) {
   var results = {
     _id:'',
     time:'',
@@ -362,7 +356,7 @@ function getPageContent(fname, dname, pagination, stepFoo)
     searchPlace:'',
     allEntityCount:0
   }; 
-  var contentSetter = function(contents){
+  var contentSetter = function(contents) {
     if(contents.code === undefined){
       if(contents.length > 0){
         if(contents[0].type=='index' && results.type == 'index'){
@@ -373,12 +367,48 @@ function getPageContent(fname, dname, pagination, stepFoo)
           var contMax = pagination.stop;
           if(pagination.stop == Infinity || pagination.stop > (contents.length)){
             contMax = contents.length;
-          } 
+          }
+          results.allEntityCount = contents.length; 
           var contMin = pagination.start;
           var i = contMin - 1;
-          results.allEntityCount = contents.length;
           while (++i < contMax)
-          {  
+          { 
+            var categories='';
+            if(!contents[i].categories)
+            {
+              contents[i].categories = [];
+              categories='<i>none</i>'
+            }
+            else{
+              contents[i].categories.forEach(function(cat){
+                if(db.categorization[cat].searchable==1){
+                  categories +='<span><a alias="category/' +
+                               cat + '" page-type="categories" page-alias="' +
+                               cat + '" page-title="Search" href="/category/' +
+                               cat + '">' + cat + '</a></span>';
+                }           
+              });
+            }
+            if(results.type=='index')
+            {
+              if(db.categorization[contents[i].categories[0]].onindex == 0 
+                || db.categorization[contents[i].categories[0]].searchable == 0) 
+              {
+                if(contMax != contents.length){
+                  contMax++;
+                }
+                continue;
+              }
+            }
+            if(results.type=='search')
+            {
+              if(db.categorization[contents[i].categories[0]].searchable == 0) {
+                if(contMax != contents.length){
+                  contMax++;
+                }
+                continue;
+              }
+            }
             var tags='';
             if(!contents[i].tags)
             {
@@ -391,20 +421,7 @@ function getPageContent(fname, dname, pagination, stepFoo)
                        tag + '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>'
               });
             }
-            var categories='';
-            if(!contents[i].categories)
-            {
-              contents[i].categories = [];
-              categories='<i>none</i>'
-            }
-            else{
-              contents[i].categories.forEach(function(cat){
-                categories +='<span><a alias="category/' +
-                             cat + '" page-type="categories" page-alias="' +
-                             cat + '" page-title="Search" href="/category/' +
-                             cat + '">' + cat + '</a></span>'
-              });
-            }
+            
             var author =  '<span><a alias="author/' + encodeURIComponent(contents[i].author) + 
                           '" page-type="author" page-alias="' +
                           encodeURIComponent(contents[i].author) +
@@ -467,8 +484,7 @@ function getPageContent(fname, dname, pagination, stepFoo)
   }
 }
 
-function editOldData(postData, request, response)
-{   
+function editOldData(postData, request, response) {   
   try{
     var postDadaObj = JSON.parse(postData);
   }
@@ -505,6 +521,7 @@ function editOldData(postData, request, response)
       db.editCatProc(request, postDadaObj, function(err){
         if(!err){
           respDone(response);
+          getCategorization();
         }
         else{
           respGoIndex(response);
@@ -541,8 +558,7 @@ function editOldData(postData, request, response)
   }  
 }
 
-function saveNewData(postData, request, response)
-{
+function saveNewData(postData, request, response) {
   try{
     var postDadaObj = JSON.parse(postData);
   }
@@ -575,6 +591,7 @@ function saveNewData(postData, request, response)
       db.saveNewCatProc(request, postDadaObj, function(err){
         if(!err){
           respDone(response);
+          getCategorization();
         }    
         else{
           respGoIndex(response); 
@@ -588,8 +605,7 @@ function saveNewData(postData, request, response)
   } 
 }
 
-function uploadImageFile(postData, request, response)
-{
+function uploadImageFile(postData, request, response) {
   try{
     var postDadaObj = JSON.parse(postData);
   }
@@ -629,8 +645,7 @@ function uploadImageFile(postData, request, response)
   });
 }
 
-function processTemplateData(postData, request, response)
-{
+function processTemplateData(postData, request, response) {
   try{
     var postDadaObj = JSON.parse(postData);
   }
@@ -681,8 +696,7 @@ function processTemplateData(postData, request, response)
   });
 }
 
-function apiCall(request, response)
-{   
+function apiCall(request, response) {   
   var postData = "";
   var postDadaObj = {};
   request.setEncoding("utf8");
@@ -709,12 +723,26 @@ function apiCall(request, response)
         });
         break;
       case "get_local_images":
-        getLocalImages(function(localImages){
-          respJSON(localImages, response);
+        db.loggedIn(request, function(check, userObj){
+          if(check){  
+            getLocalImages(function(localImages){
+              respJSON(localImages, response);
+            });
+          }
+          else{
+            respError(response);
+          }
         });
         break;
       case "reload_template_immediate":
-          template.reloadTemplate(request, response);
+          db.loggedIn(request, function(check, userObj){
+            if(check && userObj.level == 0){ 
+              template.reloadTemplate(request, response);
+            }
+            else{
+              respError(response);
+            }
+          });
         break;
       case "load_all_pages":
         db.getAll(request, 'pages', function(outData){
@@ -737,21 +765,42 @@ function apiCall(request, response)
         });
         break;
       case "load_all_templates":
-        fs.readdir(__dirname + "/template/theme", function(error, files){
-          if(error){
-            console.log(error);
-            respError(response);
+        db.loggedIn(request, function(check, userObj){
+          if(check && userObj.level == 0){
+            fs.readdir(__dirname + "/template/theme", function(error, files){
+              if(error){
+                console.log(error);
+                respError(response);
+              }
+              else{
+                respJSON(files, response);
+              }
+            });
           }
           else{
-            respJSON(files, response);
+            respError(response);
           }
-        });
+         }); 
         break;     
       case "process_template_data":
-        processTemplateData(data, request, response);                     
+        db.loggedIn(request, function(check, userObj){
+          if(check && userObj.level == 0){
+            processTemplateData(data, request, response);                     
+          }
+          else{
+            respError(response);
+          }
+        });
         break;
       case "upload_image_file":
-        uploadImageFile(data, request, response);
+        db.loggedIn(request, function(check, userObj){  
+          if(check) {
+            uploadImageFile(data, request, response);
+          }
+          else {
+            respError(response);
+          }
+        });  
         break;
       case "post_page_savings":
         saveNewData(data, request, response);                     
@@ -815,7 +864,7 @@ function apiCall(request, response)
         break;           
       case "load_plugins_admin":
         db.loggedIn(request, function(check, userObj){
-          if(check){
+          if(check && userObj.level == 0){
             plugins.fireAdmin(response);
           }
           else{
@@ -825,7 +874,7 @@ function apiCall(request, response)
         break;
       case "save_plugin":
         db.loggedIn(request, function(check, userObj){
-          if(check){
+          if(check && userObj.level == 0){
             plugins.savePlugin(fs, data, response);
           }
           else{
@@ -834,8 +883,15 @@ function apiCall(request, response)
         });
         break;
       case "get_template":
-        api.getTemplate(data, template, plugins, function(data){
-          respData(data, response);
+        db.loggedIn(request, function(check, userObj){
+          if(check && userObj.level == 0){
+            api.getTemplate(data, template, plugins, function(data){
+              respData(data, response);
+            });
+          }
+          else{
+            respError(response);
+          }
         });
         break;
       case "get_index":
@@ -849,7 +905,14 @@ function apiCall(request, response)
         });            
         break;                
       case "reload_plugins":
-        plugins.reloadPlugins(response);
+        db.loggedIn(request, function(check, userObj){
+          if(check && userObj.level == 0){
+            plugins.reloadPlugins(response);
+          }
+          else{
+            respError(response);
+          }
+        });  
         break;
       case "plugin":
         var _in = api.textApi(db, template, request, plugins);
@@ -857,9 +920,13 @@ function apiCall(request, response)
         plugins.serverExecute(_in, data, response);
         break;
       case "load_dashboard":
-        api.loadDashboard(db, function(data){
-          if(data == 'error') respData(data, response)
-          else respJSON(data, response);
+        api.loadDashboard(request, db, function(data){
+          if(data == 'error') {
+            respData(data, response)
+          }
+          else {
+            respJSON(data, response);
+          }
         });
         break;
       default:
@@ -869,8 +936,7 @@ function apiCall(request, response)
   });
 }
 
-function  makeLogin(request, response)
-{
+function makeLogin(request, response) {
   db.setLogin(request, function(sessionHash, error){
     if(error == 1) {
       respGoIndex(response); 
@@ -886,8 +952,7 @@ function  makeLogin(request, response)
   });
 }
 
-function makeLogout(response)
-{
+function makeLogout(response) {
   response.writeHead(200, {
     "Set-Cookie": "INSSID=EXP; expires=Fri, 31 Dec 2010 23:59:59 GMT; path=/",
     "Content-Type": "text/html"
@@ -895,60 +960,58 @@ function makeLogout(response)
   response.end('<script>window.location.href = "/";</script>');
 }
 
-function serveStatic(dname, fname, ext, response){
-  if(['index.js', 'options.js', 'db.js', 'api.js', 'plugins.js'].indexOf(fname) != -1){
+function serveStatic(dname, fname, ext, response) {
+  function respS(data){
+    var mime = {
+      ".txt": "text/plain",
+      ".css": "text/css",
+      ".js": "text/javascript",
+      ".htm": "text/html",
+      ".html": "text/html",
+      ".jpeg": "image/jpeg",
+      ".jpg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".ico": "image/x-icon"
+    }
+    response.writeHead(200, {"Content-Type": mime[ext]});
+    response.end(data);
+  }
+  
+  if(['index.js', 'options.js', 'db.js', 'api.js', 'plugins.js', 'cache.js'].indexOf(fname) != -1){
     respShow404(response);
+    return;
   }
   else if(fname=="style.css" && dname=='/template/theme'){
-    response.writeHead(200, {"Content-Type": "text/css"});
-    response.end(template.style); 
+    respS(template.style);
+    return;
   }
   else if(fname == "jquery.js" && dname=='/template/theme'){
-    response.writeHead(200, {"Content-Type": "text/javascript"});
-    response.end(template.jquery);
+    respS(template.jquery);
+    return;
   }
   else if(fname == "in.js" && dname=='/template/theme'){
-    response.writeHead(200, {"Content-Type": "text/javascript"});
-    response.end(template.injs);
+    respS(template.injs);
+    return;
   }
-  fs.readFile(__dirname+dname+"/"+ decodeURI(fname), function(error, data){
-    if(!error){ 
-      switch(ext){   
-        case ".ico":
-          response.writeHead(200, {"Content-Type": "image/x-icon"});
-          break;
-        case ".png":
-          response.writeHead(200, {"Content-Type": "image/png"});
-          break;
-        case ".jpg":
-          response.writeHead(200, {"Content-Type": "image/jpeg"});
-          break;
-        case ".jpeg":
-          response.writeHead(200, {"Content-Type": "image/jpeg"});
-          break;
-        case ".gif":
-          response.writeHead(200, {"Content-Type": "image/gif"});
-          break;
-        case ".css":
-          response.writeHead(200, {"Content-Type": "text/css"});  
-          break;   
-        case ".js":
-          response.writeHead(200, {"Content-Type": "text/javascript"});
-          break;
-        case ".txt":
-          response.writeHead(200, {"Content-Type": "text/plain"});
-          break;                
+  var filePath = path.join(dname, fname);
+  if(cache.cacheStatic[filePath] !== undefined){
+    respS(cache.cacheStatic[filePath])
+  }
+  else{
+    fs.readFile(__dirname+dname+"/"+ decodeURI(fname), function(error, data){
+      if(!error){
+          respS(data);
       }
-      response.end(data);  
-    }
-    else{
-      respShow404(response);
-      console.log(error);
-    }
-  });
+      else{
+        respShow404(response);
+        console.log(error);
+      }
+    });
+  }
 }
 
-http.createServer(function(request, response) {
+function httpHandler(request, response) {
   var urlStringParsed = url.parse(request.url, true);
   var fname =  path.basename(urlStringParsed.pathname);
   var urlQuery = urlStringParsed.query;
@@ -986,4 +1049,6 @@ http.createServer(function(request, response) {
       } 
     }
   }
-}).listen(options.vars.serverListenPort, options.vars.serverListenIP);
+}
+
+http.createServer(httpHandler).listen(options.vars.serverListenPort, options.vars.serverListenIP);
