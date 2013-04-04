@@ -883,15 +883,8 @@ function apiCall(request, response) {
         });
         break;
       case "get_template":
-        db.loggedIn(request, function(check, userObj){
-          if(check && userObj.level == 0){
-            api.getTemplate(data, template, plugins, function(data){
-              respData(data, response);
-            });
-          }
-          else{
-            respError(response);
-          }
+        api.getTemplate(data, template, plugins, function(data){
+          respData(data, response);
         });
         break;
       case "get_index":
