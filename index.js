@@ -65,7 +65,7 @@ function respJSON(data, response) {
     response.end(JSON.stringify(data));
   }
   catch(e){
-    console.log('error sending json:' + e);
+    console.log('error sending json on respJSON():' + e);
     respError(response)
   }
 }
@@ -391,23 +391,27 @@ function getPageContent(fname, dname, pagination, stepFoo) {
             }
             if(results.type=='index')
             {
-              if(db.categorization[contents[i].categories[0]].onindex == 0 
-                || db.categorization[contents[i].categories[0]].searchable == 0) 
-              {
-                if(contMax != contents.length){
-                  contMax++;
+              if(contents[i].categories != false) {  
+                if(db.categorization[contents[i].categories[0]].onindex == 0 
+                  || db.categorization[contents[i].categories[0]].searchable == 0) 
+                {
+                  if(contMax != contents.length){
+                    contMax++;
+                  }
+                  continue;
                 }
-                continue;
-              }
+              }  
             }
             if(results.type=='search')
             {
-              if(db.categorization[contents[i].categories[0]].searchable == 0) {
-                if(contMax != contents.length){
-                  contMax++;
+              if(contents[i].categories != false) {  
+                if(db.categorization[contents[i].categories[0]].searchable == 0) {
+                  if(contMax != contents.length){
+                    contMax++;
+                  }
+                  continue;
                 }
-                continue;
-              }
+              }  
             }
             var tags='';
             if(!contents[i].tags)
