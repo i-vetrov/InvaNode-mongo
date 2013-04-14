@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.2
+ * @license InvaNode CMS v0.1.3
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -14,7 +14,7 @@
 var fs = require("fs");
 var message = {error:{message:"error"},done:{message:"done"}};
 
-String.prototype.replaceAll=function(find, replace_to){
+String.prototype.replaceAll=function(find, replace_to) {
    return this.replace(new RegExp(find, "g"), replace_to);
 };
 
@@ -29,12 +29,12 @@ String.prototype.escapeSpecialChars = function() {
              .replace(/[\t]/g, '\\t');
 };
 
-var Plugins = function(){
+var Plugins = function() {
  var context = this; 
  var folder = __dirname + "/plugins"; 
  this.plugin = [];
  this.list = fs.readdirSync(folder);
- this.list.forEach(function(name){
+ this.list.forEach(function(name) {
     var i = context.plugin.length;
     context.plugin[i] = 
       JSON.parse(fs.readFileSync(folder + "/" + name + "/plugin.json", 'utf-8'));
@@ -42,16 +42,16 @@ var Plugins = function(){
     context.plugin[i].content.replaceWith = 
       fs.readFileSync(folder + "/" + name + "/" + context.plugin[i].content.source, 'utf-8');
     context.plugin[i].alias = name;
-    try{
+    try {
       context.plugin[i].serveCode = require("./plugins/"+name+"/plugin-server.js");
     }
-    catch(e){
+    catch(e) {
      context.plugin[i].serveCode = "none";
     }
-    context.plugin[i].serverExecute = function(_in, inData, response){
+    context.plugin[i].serverExecute = function(_in, inData, response) {
       if(this.serveCode != "none"){
         try {
-          this.serveCode.execute(_in, inData, message, function(outData){
+          this.serveCode.execute(_in, inData, message, function(outData) {
             if(typeof response == "function") {
               response(outData);
             }
@@ -61,13 +61,12 @@ var Plugins = function(){
             }    
           });
         }
-        catch(e)
-        {   
-          console.log(e);
+        catch(e) {   
+          console.log("Server plugin execution error: " + e);
           if(typeof response == "function") {
             response(JSON.stringify(message.error));
           }
-          else{
+          else {
             response.writeHead(200, {"Content-Type": "text/plain"});
             response.end(JSON.stringify(message.error));
           }
@@ -75,7 +74,7 @@ var Plugins = function(){
       }
     };
   });
-  this.reloadPlugins = function(){
+  this.reloadPlugins = function() {
     context.plugin = [];
     context.list = fs.readdirSync(folder);
     context.list.forEach(function(name){
@@ -85,17 +84,17 @@ var Plugins = function(){
       context.plugin[i].content.replaceWith = 
         fs.readFileSync(folder + "/" + name + "/" + context.plugin[i].content.source, 'utf-8');
       context.plugin[i].alias = name;
-      try{
+      try {
         context.plugin[i].serveCode = require("./plugins/"+name+"/plugin-server.js");
       }
-      catch(e){
+      catch(e) {
         context.plugin[i].serveCode = "none";
       }
-      context.plugin[i].serverExecute = function(_in, inData, response){
+      context.plugin[i].serverExecute = function(_in, inData, response) {
         console.log(inData);
         if(this.serveCode != "none"){
           try {
-            this.serveCode.execute(_in, inData, message, function(outData){
+            this.serveCode.execute(_in, inData, message, function(outData) {
               if(typeof response == "function") {
                 response(outData);
               }
@@ -105,12 +104,11 @@ var Plugins = function(){
               }    
             });
           }
-          catch(e)
-          {   
+          catch(e) {   
             if(typeof response == "function") {
               response(JSON.stringify(message.error));
             }
-            else{
+            else {
               response.writeHead(200, {"Content-Type": "text/plain"});
               response.end(JSON.stringify(message.error));
             }
@@ -123,9 +121,9 @@ var Plugins = function(){
 
 var plugins = new Plugins();
 
-exports.serverExecute = function(_in, postData, response){ 
+exports.serverExecute = function(_in, postData, response) { 
   var pData = JSON.parse(postData);
-  plugins.plugin.forEach(function(plugin){
+  plugins.plugin.forEach(function(plugin) {
     if(plugin.alias==pData.alias){
       plugin.serverExecute(_in, pData, response);
       return;
@@ -133,14 +131,14 @@ exports.serverExecute = function(_in, postData, response){
   });
 };
 
-exports.fire = function(template, place, stepFoo){
+exports.fire = function(template, place, stepFoo) {
   plugins.plugin.forEach(function(plugin){
-    if(plugin.applyTo.indexOf(place) != -1){ 
-      try{
+    if(plugin.applyTo.indexOf(place) != -1) { 
+      try {
         var JS = JSON.parse(template);
         template = template.replaceAll(plugin.content.replace, plugin.content.replaceWith.escapeSpecialChars());
       }
-      catch(e){
+      catch(e) {
         template = template.replaceAll(plugin.content.replace, plugin.content.replaceWith);
       }
     }
@@ -151,21 +149,19 @@ exports.fire = function(template, place, stepFoo){
   stepFoo(template);   
 };
 
-reloadPlugins = function(response)
-{
+reloadPlugins = function(response) {
   plugins.reloadPlugins();
   response.writeHead(200, {"Content-Type": "text/plain"});
   response.end("done");
 }
 exports.reloadPlugins = reloadPlugins;
 
-exports.fireAdmin = function(response){ 
+exports.fireAdmin = function(response) { 
     response.writeHead(200, {"Content-Type": "text/plain"});
     response.end(JSON.stringify(plugins));
 };
 
-exports.savePlugin = function(fs, data, response)
-{
+exports.savePlugin = function(fs, data, response) {
   var postDadaObj = JSON.parse(data);
   var name = postDadaObj.name;
   var author = postDadaObj.author;
@@ -176,7 +172,7 @@ exports.savePlugin = function(fs, data, response)
   var alias = postDadaObj.alias;
   applyto = applyto.split(",");
   var curP;
-  plugins.plugin.forEach(function(plugin){
+  plugins.plugin.forEach(function(plugin) {
     if(plugin.alias == alias) curP = plugin;
   });
   if(curP === undefined) {
@@ -195,7 +191,7 @@ exports.savePlugin = function(fs, data, response)
     },
     "applyTo":applyto
   });
-  try{
+  try {
     fs.writeFileSync( __dirname + "/plugins/" + alias + "/plugin.json"
                      , JSON.stringify(pluginJSON, null, 4)
                      , 'utf-8');
@@ -203,8 +199,7 @@ exports.savePlugin = function(fs, data, response)
                      , replacewith
                      , 'utf-8');
   }
-  catch(exception_var)
-  {
+  catch(exception_var) {
     console.log('saving plugin error: '+exception_var);
     response.writeHead(200, {"Content-Type": "text/plain"});
     response.end("error");

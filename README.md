@@ -7,7 +7,7 @@ InvaNode official site: [invanode.org](http://www.invanode.org)
 
 ## Description
 
-InvaNode is a simple blogging CMS. It has base functionality for simple web-site with manageable content and template engine.
+InvaNode is a simple CMS. It has base functionality for simple web-site with manageable content and template engine.
 
 It is light and easy customizable.
 

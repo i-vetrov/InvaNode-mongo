@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.2
+ * @license InvaNode CMS v0.1.3
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -16,6 +16,7 @@ var db = require("./db");
 var api = require("./api");
 var plugins = require("./plugins");
 var cache = require("./cache");
+var template = require("./templates").template;
 var http = require("http");
 var crypto = require('crypto');
 var path = require('path');
@@ -41,7 +42,7 @@ function respGoIndex(response) {
 
 function respShow404(response) {
   response.writeHead(404, {"Content-Type": "text/html"});
-  response.end(template.page404);
+  response.end(template.base.page404);
 }
 
 function respTrue(response) {
@@ -75,55 +76,6 @@ function respShow301(location, response) {
   response.end();
 }
 
-function Template() {
-  this.initTemplate = function(stepFoo) {
-    var context = this;
-    try{
-      context.header = fs.readFileSync(__dirname+"/template/theme/header.html", 'utf-8'); 
-      context.index = fs.readFileSync(__dirname+"/template/theme/index.html", 'utf-8');
-      context.page = fs.readFileSync(__dirname+"/template/theme/page.html", 'utf-8');
-      context.post = fs.readFileSync(__dirname+"/template/theme/post.html", 'utf-8');
-      context.footer = fs.readFileSync(__dirname+"/template/theme/footer.html", 'utf-8');
-      context.small_post = fs.readFileSync(__dirname+"/template/theme/small_post.html", 'utf-8');
-      context.page404 = fs.readFileSync(__dirname+"/template/theme/404.html", 'utf-8');
-      context.loginpage = fs.readFileSync(__dirname+"/template/theme/loginpage.html", 'utf-8');
-      context.style = fs.readFileSync(__dirname+"/template/theme/style.css", 'utf-8');
-      context.jquery = fs.readFileSync(__dirname+"/template/assets/js/jquery.js", 'utf-8');
-      context.injs = fs.readFileSync(__dirname+"/template/assets/js/in.js", 'utf-8');
-      context.search = fs.readFileSync(__dirname+"/template/theme/search.html", 'utf-8');
-      if(stepFoo){
-        stepFoo(false);
-      }
-    }catch (exception_var){
-      console.log('reloading template error: '+exception_var);
-      if(stepFoo){
-        stepFoo(true);
-      }
-    }
-  };
-  this.reloadTemplate = function(request, response) {
-    var context = this;
-    db.loggedIn(request, function(check, userObj){              
-      if(check && userObj.level == 0){
-        context.initTemplate(function(error){
-          if(!error){
-            respDone(response);
-          }
-          else{
-            respError(response);
-          }
-        });
-      }
-      else{
-        respGoIndex(response);
-        console.log("login error"); 
-      }
-    });                        
-  };
-}
-
-var template = new Template();
-template.initTemplate();
 console.log('InvaNode started');
 
 String.prototype.replaceAll = function(find, replace_to) {
@@ -134,7 +86,7 @@ String.prototype.md5 = function() {
   return crypto.createHash('md5').update(this).digest("hex");
 };
 
-function getDate(raw) {
+function getFormattedDate(raw) {
   var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   var date = '<span class="date-d">' + raw.getDate() + '</span> <span class="date-m">' + 
@@ -193,7 +145,7 @@ function popTemplate(request, response, urlQuery, fname, dname) {
     var parts = cookie.split('=');
     cookies[ parts[ 0 ].trim() ] = ( parts[ 1 ] || '' ).trim();
   });
-  db.getMainMenu(fname, "html", function(res) {
+  db.getMainMenu(fname, dname, "html", function(res) {
     getPageContent(fname, dname, pagination, function(cont){
       var title;
       if(cont===undefined){
@@ -207,20 +159,21 @@ function popTemplate(request, response, urlQuery, fname, dname) {
         }
         var searchQuery = '';
         if(fname==="" && dname=="/"){
-          outTemplate = template.header+template.index+template.footer;
+          outTemplate = template.base.header+template.base.index+template.base.footer;
           title = options.vars.title;
           cont.type = "index";
         } 
         else if(dname=="/tag" || dname=="/search" || dname == "/author" || dname == "/category"){
-          outTemplate = template.header+template.search+template.footer;
+          outTemplate = template.base.header+template.base.search+template.base.footer;
           title = "Search | "+options.vars.title;
           cont.type = "search";
           searchQuery = 'Search by ' + cont.searchPlace + ': <span>' + 
                         decodeURIComponent(fname) + '</span>';
         }
         else {
+         cont.template = cont.template ? cont.template : "base";
           if(cont.type == "pages"){
-            outTemplate = template.header+template.page+template.footer; 
+            outTemplate = template[cont.template].header+template[cont.template].page+template[cont.template].footer; 
           }
           else if(cont.type == "posts") {
             if((dname+'/'+fname) != '/' + buildRoutingGraph(cont.type,
@@ -231,7 +184,7 @@ function popTemplate(request, response, urlQuery, fname, dname) {
               respShow404(response);
               return;
             }
-            outTemplate = template.header+template.post+template.footer;
+            outTemplate = template[cont.template].header+template[cont.template].post+template[cont.template].footer;
           }
           title = cont.name+' | '+options.vars.title;
         }
@@ -239,38 +192,38 @@ function popTemplate(request, response, urlQuery, fname, dname) {
           respShow301(options.vars.siteUrl, response);
           return;
         }
-        var tags='';
-        if(!cont.tags)
+        var tags = '';
+        if(!cont.tags || cont.tags == false)
         {
           cont.tags = [];
           tags='<i>none</i>'
         }
         else{
           cont.tags.forEach(function(tag){
-            tags +='<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' +
-              tag + '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>';
+            tags += '<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' +
+                    tag + '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>';
           });
         }
         var categories='';
-        if(!cont.categories)
+        if(!cont.categories || cont.categories == false)
         {
           cont.categories = [];
           categories='<i>none</i>'
         }
         else{
           cont.categories.forEach(function(cat){
-            categories +='<span><a alias="category/' + cat + 
-                         '" page-type="categories" page-alias="' + cat + 
-                         '" page-title="Search" href="/category/' + cat + 
-                         '">'+cat+'</a></span>'
+            categories += '<span><a alias="category/' + cat + 
+                          '" page-type="categories" page-alias="' + cat + 
+                          '" page-title="Search" href="/category/' + cat + 
+                          '">'+cat+'</a></span>'
           });
         }
-        var author =  '<span><a alias="author/' + encodeURIComponent(cont.author) + 
-        '" page-type="author" page-alias="' +
-        encodeURIComponent(cont.author) +
-        '" page-title="Search" href="/author/' + 
-        encodeURIComponent(cont.author) + '">' + 
-        cont.author + '</a></span>';
+        var author = '<span><a alias="author/' + encodeURIComponent(cont.author) + 
+                     '" page-type="author" page-alias="' +
+                     encodeURIComponent(cont.author) +
+                     '" page-title="Search" href="/author/' + 
+                     encodeURIComponent(cont.author) + '">' + 
+                     cont.author + '</a></span>';
         plugins.fire(outTemplate
               .replaceAll("{{JS_CUR_PAGE_URL}}", fname)
               .replaceAll("{{JS_SITE_URL}}",options.vars.siteUrl)
@@ -278,7 +231,7 @@ function popTemplate(request, response, urlQuery, fname, dname) {
               .replaceAll("{{NUM_POSTS_PER_PAGE}}", options.numPostPerPage)
               .replaceAll("{{ROUTING_GRAPH}}",routingGraph)
               .replaceAll("{{POST_NAME}}", cont.name)
-              .replaceAll("{{POST_DATE}}", getDate(new Date(cont.time*1000)))
+              .replaceAll("{{POST_DATE}}", getFormattedDate(new Date(cont.time*1000)))
               .replaceAll("{{PAGE_CONTENT}}", cont.smalldata+cont.data)
               .replaceAll("{{PAGINATION}}", getPagination(urlQuery.page, cont.allEntityCount))
               .replaceAll("{{MAIN_MENU}}", res)
@@ -374,7 +327,7 @@ function getPageContent(fname, dname, pagination, stepFoo) {
           while (++i < contMax)
           { 
             var categories='';
-            if(!contents[i].categories)
+            if(!contents[i].categories || contents[i].categories == false)
             {
               contents[i].categories = [];
               categories='<i>none</i>'
@@ -385,13 +338,13 @@ function getPageContent(fname, dname, pagination, stepFoo) {
                   categories +='<span><a alias="category/' +
                                cat + '" page-type="categories" page-alias="' +
                                cat + '" page-title="Search" href="/category/' +
-                               cat + '">' + cat + '</a></span>';
+                               encodeURIComponent(cat) + '">' + cat + '</a></span>';
                 }           
               });
             }
             if(results.type=='index')
             {
-              if(contents[i].categories != false) {  
+              if(contents[i].categories != false) {
                 if(db.categorization[contents[i].categories[0]].onindex == 0 
                   || db.categorization[contents[i].categories[0]].searchable == 0) 
                 {
@@ -400,11 +353,11 @@ function getPageContent(fname, dname, pagination, stepFoo) {
                   }
                   continue;
                 }
-              }  
+            }  
             }
             if(results.type=='search')
             {
-              if(contents[i].categories != false) {  
+              if(contents[i].categories != false) {
                 if(db.categorization[contents[i].categories[0]].searchable == 0) {
                   if(contMax != contents.length){
                     contMax++;
@@ -414,7 +367,7 @@ function getPageContent(fname, dname, pagination, stepFoo) {
               }  
             }
             var tags='';
-            if(!contents[i].tags)
+            if(!contents[i].tags || contents[i].tags == false)
             {
               contents[i].tags = [];
               tags='<i>none</i>'
@@ -422,7 +375,7 @@ function getPageContent(fname, dname, pagination, stepFoo) {
             else{
               contents[i].tags.forEach(function(tag){
                 tags +='<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' + 
-                       tag + '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>'
+                       tag + '" page-title="Search" href="/tag/' + encodeURIComponent(tag) + '">' + tag + '</a></span>'
               });
             }
             
@@ -435,9 +388,10 @@ function getPageContent(fname, dname, pagination, stepFoo) {
             var rGraph = buildRoutingGraph(contents[i].type, contents[i]._id, 
                                            contents[i].alias, contents[i].categories[0], 
                                            contents[i].time);            
+            contents[i].template = contents[i].template ? contents[i].template : "base";
             try{
-              results.data += template.small_post.replaceAll("{{SMALL_POST_NAME}}", contents[i].name)
-              .replaceAll("{{SMALL_POST_DATE}}", getDate(new Date(contents[i].time*1000))) 
+              results.data += template[contents[i].template].small_post.replaceAll("{{SMALL_POST_NAME}}", contents[i].name)
+              .replaceAll("{{SMALL_POST_DATE}}", getFormattedDate(new Date(contents[i].time*1000))) 
               .replaceAll("{{SMALL_POST_CONTENT}}", contents[i].smalldata)
               .replaceAll("{{SMALL_POST_LINK}}", options.vars.siteUrl + rGraph)
               .replaceAll("{{PAGE_ALIAS}}", contents[i].alias)
@@ -450,6 +404,7 @@ function getPageContent(fname, dname, pagination, stepFoo) {
             }
             catch(e){
               console.log("small_post templating error: "+e);
+              stepFoo("error");
             }                        
           }
           stepFoo(results);
@@ -471,17 +426,17 @@ function getPageContent(fname, dname, pagination, stepFoo) {
   else if(dname=="/tag" || dname=="/search"){
     results.type = 'search';
     results.searchPlace='tag';
-    db.getRegularEntityByTag(fname, contentSetter);
+    db.getRegularEntityByTag(decodeURIComponent(fname), contentSetter);
   }
   else if(dname == "/author"){
     results.type = 'search';
     results.searchPlace='author';
-    db.getRegularEntityByAuthor(fname, contentSetter);
+    db.getRegularEntityByAuthor(decodeURIComponent(fname), contentSetter);
   }
   else if(dname == "/category"){
     results.type = 'search';
     results.searchPlace='category';
-    db.getRegularEntityByCategory(fname, contentSetter);
+    db.getRegularEntityByCategory(decodeURIComponent(fname), contentSetter);
   }
   else{                     
     db.getRegularEntityByAlias(fname, dname, stepFoo);
@@ -661,12 +616,13 @@ function processTemplateData(postData, request, response) {
   var fname = postDadaObj.fname;
   var todo = postDadaObj.todo;
   var fdata = postDadaObj.fdata;
+  var alias = postDadaObj.alias;
   db.loggedIn(request, function(check, userObj){
     if(check){
       switch(todo)
       {
         case 'get':
-          fs.readFile(__dirname+"/template/theme/"+fname, function(err, data){
+          fs.readFile(__dirname+"/template/theme/" + alias+ "/" + fname, function(err, data){
             if(err)
             {
               respError(response);
@@ -681,13 +637,13 @@ function processTemplateData(postData, request, response) {
           });       
           break;
         case 'save':
-          fs.writeFile(__dirname+"/template/theme/"+fname, fdata, function(err){
+          fs.writeFile(__dirname+"/template/theme/" + alias+ "/"  + fname, fdata, function(err){
             if(err) {
               respError(response);
               console.log(err);
             }
             else{
-              template.reloadTemplate(request, response);
+              template[alias].reloadTemplate(request, response);
             }    
           });        
           break;
@@ -740,10 +696,16 @@ function apiCall(request, response) {
         break;
       case "reload_template_immediate":
           db.loggedIn(request, function(check, userObj){
-            if(check && userObj.level == 0){ 
-              template.reloadTemplate(request, response);
+            try {
+              data = JSON.parse(data);
+              if(data.alias && check && userObj.level == 0){ 
+                template[data.alias].reloadTemplate(request, response);
+              }
+              else{
+                respError(response);
+              }
             }
-            else{
+            catch (e) {
               respError(response);
             }
           });
@@ -770,18 +732,25 @@ function apiCall(request, response) {
         break;
       case "load_all_templates":
         db.loggedIn(request, function(check, userObj){
-          if(check && userObj.level == 0){
-            fs.readdir(__dirname + "/template/theme", function(error, files){
-              if(error){
-                console.log(error);
-                respError(response);
-              }
-              else{
-                respJSON(files, response);
-              }
-            });
+          try {
+            data = JSON.parse(data);
+            var tplAlias = data.alias ? data.alias : '';
+            if(check && userObj.level == 0){
+              fs.readdir(__dirname + "/template/theme/" + tplAlias, function(error, files){
+                if(error){
+                  console.log(error);
+                  respError(response);
+                }
+                else{
+                  respJSON(files, response);
+                }
+              });
+            }
+            else{
+              respError(response);
+            }
           }
-          else{
+          catch (e) {
             respError(response);
           }
          }); 
@@ -887,7 +856,7 @@ function apiCall(request, response) {
         });
         break;
       case "get_template":
-        api.getTemplate(data, template, plugins, function(data){
+        api.getTemplate(data, template.base, plugins, function(data){
           respData(data, response);
         });
         break;
@@ -912,7 +881,7 @@ function apiCall(request, response) {
         });  
         break;
       case "plugin":
-        var _in = api.textApi(db, template, request, plugins);
+        var _in = api.textApi(db, template.base, request, plugins);
         _in.db = db.db;
         plugins.serverExecute(_in, data, response);
         break;
@@ -974,26 +943,32 @@ function serveStatic(dname, fname, ext, response) {
     response.writeHead(200, {"Content-Type": mime[ext]});
     response.end(data);
   }
-  
-  if(['index.js', 'options.js', 'db.js', 'api.js', 'plugins.js', 'cache.js'].indexOf(fname) != -1){
+  var forbiddenFiles = ['index.js', 
+                        'options.js', 
+                        'db.js', 
+                        'api.js', 
+                        'plugins.js', 
+                        'cache.js', 
+                        'template.js'];
+  if(forbiddenFiles.indexOf(fname) != -1) {
     respShow404(response);
     return;
   }
-  else if(fname=="style.css" && dname=='/template/theme'){
-    respS(template.style);
+  else if(fname=="style.css" && dname=='/template/theme/base'){
+    respS(template.base.style);
     return;
   }
-  else if(fname == "jquery.js" && dname=='/template/theme'){
-    respS(template.jquery);
+  else if(fname == "jquery.js" && dname=='/template/assets/js'){
+    respS(template.base.jquery);
     return;
   }
-  else if(fname == "in.js" && dname=='/template/theme'){
-    respS(template.injs);
+  else if(fname == "in.js" && dname=='/template/assets/js'){
+    respS(template.base.injs);
     return;
   }
   var filePath = path.join(dname, fname);
   if(cache.cacheStatic[filePath] !== undefined){
-    respS(cache.cacheStatic[filePath])
+    respS(cache.cacheStatic[filePath]);
   }
   else{
     fs.readFile(__dirname+dname+"/"+ decodeURI(fname), function(error, data){
@@ -1030,7 +1005,7 @@ function httpHandler(request, response) {
             }
             else{
               response.writeHead(200, {"Content-Type": "text/html"});
-              response.end(template.loginpage);  
+              response.end(template.base.loginpage);  
             }
           });
           break;

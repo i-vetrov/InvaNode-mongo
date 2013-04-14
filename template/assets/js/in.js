@@ -26,11 +26,11 @@ function IN(){
         }
         if (typeof data == 'undefined') data = '{"default":"default"}';
         var dataStr = JSON.stringify(data);
-        $.ajax({
+        jQuery.ajax({
         type: "POST",    
         url: "/api",
         data: {call: call, data: dataStr},
-        timeout: 3000,
+        timeout: 20000,
         success: function(data){
                 callback(data);
             },

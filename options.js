@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.2
+ * @license InvaNode CMS v0.1.3
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -14,11 +14,11 @@
 // Fill in pretty standard options with your web site name, title, description,
 // and don't forget to add information about your database 
 //
-exports.vars = new Object({
+exports.vars = {
       title: 'InvaNode CMS',
       appName: 'InvaNode CMS',
       siteUrl: 'http://192.168.0.102/',
-      indexDescription: 'IvaNode - open source blogging content management system based on Node.js',
+      indexDescription: 'IvaNode - open source content management system based on Node.js',
       dbHost: 'localhost',
       dbName: 'invanode',
       dbUser: '',
@@ -26,7 +26,7 @@ exports.vars = new Object({
       dbPort: 27017,
       serverListenPort: 80,
       serverListenIP: '192.168.0.102' 
-});
+};
 
 //
 // Possible variables in routing graph:
@@ -42,7 +42,6 @@ exports.vars = new Object({
 //
 exports.routingGraph = ':category/:year/:monthnum/:day/:alias';
 
-
 //
 // Set up the number of posts per page for pagination
 // (set to Infinity to avoid limitation, if you really need this):
@@ -55,5 +54,23 @@ exports.numPostPerPage = 5;
 // a_template.html      - with WYSIWYG editor for pages and posts
 // a_template-adv.html  - with splid HTML editor for pages and posts
 //
-
 exports.adminTemplate = 'a_template.html';
+
+//
+// Caching options:
+//
+// cache.cacheOn: on/off caching (true/false)
+// cache.watchFile: sets file change watching on/off (true/false)
+// cache.cacheVolume: sets maximum number of files to cache
+// cache.cacheSize: sets maximum size of cache in kilobytes (65536K == 64M by default)
+// cache.cachePath: Array, relative path (files or folders) that need to be cached
+//
+// Caching is on by default. 
+//
+exports.cache = {
+    cacheOn: true,
+    watchFiles: true,
+    cacheVolume: 3600,    // Note! Adjust this two options according to your
+    cacheSize: 65536,     //       server parameters and your needs.
+    cachePath: []
+};

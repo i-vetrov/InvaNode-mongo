@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.2
+ * @license InvaNode CMS v0.1.3
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -31,7 +31,6 @@ mongo.connect("mongodb://"+options.vars.dbHost+":"+options.vars.dbPort+"/"+optio
           }
         });
       });
-      
     }
     else{
       console.log("MongoDB connection error " + err);
@@ -299,6 +298,7 @@ exports.editDataProc = function (request, data, stepFoo)
     var tags = data.tags.trim();
     tags = tags.split(" ");
     var categories = data.categories;
+    var template = data.template;
   }
   catch(e){
     stepFoo(true);
@@ -333,7 +333,8 @@ exports.editDataProc = function (request, data, stepFoo)
                 description:description, 
                 published:published, 
                 tags:tags, 
-                categories:categories
+                categories:categories,
+                template:template
                 }}, {w:1},
               function(err, results){
                 if(!err){
@@ -540,8 +541,9 @@ exports.saveDataProc = function (request, type, data, stepFoo)
       var published = data.published;
       var description = data.description;
       var tags = data.tags.trim();
-      tags = tags.split(" ");
+      tags = tags.split(/\s+/);
       var categories = data.categories;
+      var template = data.template;
     }
     catch(e){
       stepFoo(true);
@@ -596,7 +598,8 @@ exports.saveDataProc = function (request, type, data, stepFoo)
                   published:published, 
                   tags:tags, 
                   author:userObj.penname,
-                  categories:categories
+                  categories:categories,
+                  template:template
                   }, {w:1},
                   function(){
                     if(!err){
@@ -863,19 +866,19 @@ var loggedIn = function (request, stepFoo)
 }
 exports.loggedIn = loggedIn;
 
-exports.getMainMenu = function (fname, type, stepFoo)
+exports.getMainMenu = function (fname, dname, type, stepFoo)
 {
   db.collection("pages").find({published:1}).toArray(function(err, results){
     if(!err){
       if(type=="list"){
           stepFoo(results);
       }
-      else if(type=="html"){
+      else if(type == "html"){
         var menuOut ='<ul><li><a';
-        if(fname==="") {menuOut +=' class="active"';}
-        menuOut +=' href="' + options.vars.siteUrl + 
-                  '" alias="" page-alias="" page-type="index" page-title="' + 
-                  options.vars.appName.replaceAll('["]', "\\'") + '">Home</a></li>';
+        if(fname === "") {menuOut +=' class="active"';}
+        menuOut += ' href="' + options.vars.siteUrl + 
+                   '" alias="" page-alias="" page-type="index" page-title="' + 
+                   options.vars.appName.replaceAll('["]', "\\'") + '">Home</a></li>';
         results.forEach(function(result){
             var catE = false;
             if(!categorization[result.categories[0]]){
@@ -887,12 +890,12 @@ exports.getMainMenu = function (fname, type, stepFoo)
             }
             if(result.type!="index" && catE){    
               menuOut += '<li><a';
-              if(fname==result.alias){menuOut +=' class="active"';}
-              menuOut +=' href="' + options.vars.siteUrl+result.alias + '" alias="' + 
-                        result.alias + '" page-alias="' + result.alias + 
-                        '" page-type="pages" page-title="' + 
-                        result.name.replaceAll('["]', "\\'") + '">' + 
-                        result.name + '</a></li>';
+              if(fname == result.alias && dname == '/'){menuOut +=' class="active"';}
+              menuOut += ' href="' + options.vars.siteUrl+result.alias + '" alias="' + 
+                         result.alias + '" page-alias="' + result.alias + 
+                         '" page-type="pages" page-title="' + 
+                         result.name.replaceAll('["]', "\\'") + '">' + 
+                         result.name + '</a></li>';
             }
         });
         menuOut += '</ul>';

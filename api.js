@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.2
+ * @license InvaNode CMS v0.1.3
  * https://github.com/i-vetrov/InvaNode
  * https://github.com/i-vetrov/InvaNode-mongo
  *
@@ -20,7 +20,7 @@ getEntityByAlias = function(data, db, plugins, stepFoo)
     db.getRegularEntityByAlias(dataObj.alias, "/", function(result){
       if(result !== undefined){
         if(result.code !== undefined){
-          stepFoo("error"); 
+          stepFoo("error");
         }
         else{
           plugins.fire(result.smalldata, dataObj.type, function(smalldata){
@@ -33,7 +33,7 @@ getEntityByAlias = function(data, db, plugins, stepFoo)
         }
       }
       else{
-        stepFoo("error");    
+        stepFoo("error");
       }
     });
   }    
@@ -262,7 +262,7 @@ exports.getPosts = getPosts;
 
 getAllPages = function(request, db, plugins, stepFoo)
 {
-  db.getMainMenu("", "list" ,function(results){
+  db.getMainMenu("", "", "list" ,function(results){
     plugins.fire(JSON.stringify(results), "pages", function(data){
       stepFoo(data);
     });
