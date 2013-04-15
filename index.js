@@ -289,9 +289,9 @@ function buildRoutingGraph(type, id, alias, category, date) {
   var url = routingGraph.replaceAll(":category", category)
                         .replaceAll(":alias", alias)
                         .replaceAll(":id", id)
-                        .replaceAll(":year", new Date(date*1000).getFullYear())
-                        .replaceAll(":monthnum", monthnum[new Date(date*1000).getMonth()])
-                        .replaceAll(":day", new Date(date*1000).getDate());
+                        .replaceAll(":year", new Date(date*1000).getUTCFullYear())
+                        .replaceAll(":monthnum", monthnum[new Date(date*1000).getUTCMonth()])
+                        .replaceAll(":day", new Date(date*1000).getUTCDate());
   return url;            
 }
 

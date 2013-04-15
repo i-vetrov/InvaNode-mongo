@@ -355,28 +355,30 @@ loadDashboard = function(request, db, stepFoo)
     indexPageAlias: ''
   };
   db.getIndexContent(function(result){
-    if(result[0].type=="index") {
-      dashBoard.indexType = 'page';
-      dashBoard.indexName = result[0].name;
-      dashBoard.indexPageAlias = result[0].alias;
-    }
-    else if(result[0].type=="posts")
-    {
-      dashBoard.indexType = '$list_of_posts';
-      dashBoard.indexName = "<b>Basic:</b> Latest posts";
-      dashBoard.indexPageAlias = "$list_of_posts";
-    }
-    db.coutStatistics(request, function(stat){
-      if(stat == 'error') {
-        stepFoo("error");
+    if(result !== undefined) {
+      if(result[0].type=="index") {
+        dashBoard.indexType = 'page';
+        dashBoard.indexName = result[0].name;
+        dashBoard.indexPageAlias = result[0].alias;
       }
-      else{
-        dashBoard.stats = {pages_num:stat.pages_num,
-                           posts_num:stat.posts_num,
-                           users_num:stat.users_num};
-        stepFoo(dashBoard);
+      else if(result[0].type=="posts")
+      {
+        dashBoard.indexType = '$list_of_posts';
+        dashBoard.indexName = "<b>Basic:</b> Latest posts";
+        dashBoard.indexPageAlias = "$list_of_posts";
       }
-    });
+      db.coutStatistics(request, function(stat){
+        if(stat == 'error') {
+          stepFoo("error");
+        }
+        else{
+          dashBoard.stats = {pages_num:stat.pages_num,
+                             posts_num:stat.posts_num,
+                             users_num:stat.users_num};
+          stepFoo(dashBoard);
+        }
+      });
+    }
   });
 }
 exports.loadDashboard = loadDashboard;

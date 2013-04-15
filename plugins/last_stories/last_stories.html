@@ -49,14 +49,13 @@
 </div>
 <script>
 $(document).ready(function(){
-    _in.api("get_latest_posts",{count: 5},function(data){
-        data = JSON.parse(data);
-        var i = data.length;
-        while(i--)
-        {
-            var url = _in.buildRoutingGraph(data[i].type, data[i]._id, data[i].alias, data[i].categories[0], data[i].time)
-            $("#last-stories").append('<div class="last-stories-item"><a alias="'+url+'" page-alias="' + data[i].alias + '" page-type="posts" page-title="'+data[i].name.replaceAll('["]', "\\'")+'" href="' + siteUrl + url + '">'+data[i].name+'</a></div>');
-        }      
-    });
+  _in.api("get_latest_posts", {count: 5},function(data){
+      data = $.parseJSON(data);
+      var i = -1; 
+      while(++i <= data.length)
+      {
+          $("#last-stories").append('<div class="last-stories-item"><a alias="' + data[i].alias + '" page-type="posts" page-title="'+data[i].name.replaceAll('["]', "\\'")+'" href="/' + _in.buildRoutingGraph(data[i].type, data[i]._id, data[i].alias, data[i].categories[0], data[i].time) + '">' + data[i].name + '</a></div>');
+      }      
+  });
 });
 </script>

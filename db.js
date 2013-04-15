@@ -67,7 +67,7 @@ exports.getIndexContent = function (stepFoo)
 
 exports.getLatestPosts = function(stepFoo)
 {
-  db.collection("posts").find({published:1}).sort({_id: 1}).toArray(function(err, results) {
+  db.collection("posts").find({published:1}).sort({_id: -1}).toArray(function(err, results) {
     if (err) {
       console.log(err);
       stepFoo("error");
