@@ -27,7 +27,7 @@ else {
   mongoURL = "mongodb://"+options.vars.dbUser+':'+options.vars.dbPass+"@"+options.vars.dbHost
              +":"+options.vars.dbPort+"/"+options.vars.dbName;
 }
-mongo.connect("mongodb://"+options.vars.dbHost+":"+options.vars.dbPort+"/"+options.vars.dbName, {
+mongo.connect(mongoURL, {
   auto_reconnect: true}, 
   function(err, d) {
     if(!err) {
