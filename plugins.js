@@ -1,6 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.3
- * https://github.com/i-vetrov/InvaNode
+ * @license InvaNode CMS v0.1.4
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -149,19 +148,12 @@ exports.fire = function(template, place, stepFoo) {
   stepFoo(template);   
 };
 
-reloadPlugins = function(response) {
-  plugins.reloadPlugins();
-  response.writeHead(200, {"Content-Type": "text/plain"});
-  response.end("done");
-}
-exports.reloadPlugins = reloadPlugins;
-
 exports.fireAdmin = function(response) { 
     response.writeHead(200, {"Content-Type": "text/plain"});
     response.end(JSON.stringify(plugins));
 };
 
-exports.savePlugin = function(fs, data, response) {
+exports.savePlugin = function(fs, data, stepFoo) {
   var postDadaObj = JSON.parse(data);
   var name = postDadaObj.name;
   var author = postDadaObj.author;
@@ -176,8 +168,7 @@ exports.savePlugin = function(fs, data, response) {
     if(plugin.alias == alias) curP = plugin;
   });
   if(curP === undefined) {
-    response.writeHead(200, {"Content-Type": "text/plain"});
-    response.end("error");
+    stepFoo("error");
     return;
   }
   var pluginJSON = new Object({
@@ -201,11 +192,8 @@ exports.savePlugin = function(fs, data, response) {
   }
   catch(exception_var) {
     console.log('saving plugin error: '+exception_var);
-    response.writeHead(200, {"Content-Type": "text/plain"});
-    response.end("error");
+    stepFoo("error");
     return;
   }
-  plugins.reloadPlugins();
-  response.writeHead(200, {"Content-Type": "text/plain"});
-  response.end("done");
+  stepFoo("done");
 }

@@ -1,6 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.3
- * https://github.com/i-vetrov/InvaNode
+ * @license InvaNode CMS v0.1.4
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)

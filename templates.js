@@ -1,6 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.3
- * https://github.com/i-vetrov/InvaNode
+ * @license InvaNode CMS v0.1.4
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -14,6 +13,7 @@
 var db = require("./db");
 var fs = require("fs");
 var options = require("./options");
+var events = require("./events");
 var template = {};
 
 var tplFiles = {
@@ -64,23 +64,21 @@ function Template() {
       }
     }
   };
-  this.reloadTemplate = function(request, response) {
+  this.reloadTemplate = function(request, stepFoo) {
     var context = this;
     db.loggedIn(request, function(check, userObj){              
       if(check && userObj.level == 0){
         context.initTemplate(context.alias, function(error){
           if(!error){
-            response.writeHead(200, {"Content-Type": "text/plain"});
-            response.end('done');
+            stepFoo('done')
           }
           else{
-            response.writeHead(200, {"Content-Type": "text/plain"});
-            response.end('error');
+            stepFoo('error')
           }
         });
       }
       else{
-        respGoIndex(response);
+        stepFoo('error')
         console.log("login error"); 
       }
     });                        

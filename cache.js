@@ -1,6 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.3
- * https://github.com/i-vetrov/InvaNode
+ * @license InvaNode CMS v0.1.4
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -14,8 +13,10 @@
 var fs = require("fs");
 var path = require('path');
 var options = require("./options");
-var cacheStaticStorage = [];
+var events = require("./events");
+var cacheStaticStorage = {};
 var cacheSize = 0;
+var cacheDynamicStorage = {};
 
 String.prototype.replaceAll=function(find, replace_to) {
   return this.replace(new RegExp(find, "g"), replace_to);
@@ -41,7 +42,7 @@ function cacheDirectory(dirPath) {
 }
 
 function doCache(fullPath) {
-  if(options.cache.cacheOn) {
+  if(options.cache.stat.cacheOn) {
     try {
       var stats = fs.statSync(fullPath);
       if(stats.isFile()){
@@ -60,11 +61,11 @@ function doCache(fullPath) {
 function putIntoCache(fullPath, fileSize) {
   try {
     if(cacheStaticStorage[fullPath.replaceAll(__dirname, '')] !== undefined
-        || (cacheStaticStorage.length < options.cache.cacheVolume
-        && (parseInt(cacheSize) + parseInt(fileSize)) < (options.cache.cacheSize*1024))) {
+        || (cacheStaticStorage.length < options.cache.stat.cacheVolume
+        && (parseInt(cacheSize) + parseInt(fileSize)) < (options.cache.stat.cacheSize*1024))) {
       cacheStaticStorage[fullPath.replaceAll(__dirname, '')] = fs.readFileSync(fullPath);
       cacheSize += fileSize;
-      if(options.cache.watchFiles) {
+      if(options.cache.stat.watchFiles) {
         fs.watch(fullPath, function(e, f){
             if(e == 'change') {
               putIntoCache(fullPath, 0);
@@ -78,14 +79,35 @@ function putIntoCache(fullPath, fileSize) {
   }  
 }
 
-var forceUpdate = function(){
+var forceClearDynamic = function() {
+  for (c in cacheDynamicStorage) {
+    if(cacheDynamicStorage.hasOwnProperty(c)){
+      cacheDynamicStorage[c] = undefined;
+      delete cacheDynamicStorage[c];
+    }
+  }
+}
+
+var forceUpdateStatic = function(){
   doCache(path.join(__dirname, 'template/assets'));
   doCache(path.join(__dirname, 'favicon.ico'));
-  options.cache.cachePath.forEach(function(relPath){
+  options.cache.stat.cachePath.forEach(function(relPath){
     doCache(path.join(__dirname, relPath));
   });
 }  
-forceUpdate();
+forceUpdateStatic();
 
-exports.forceUpdate = forceUpdate;
+var getDynamicCache = function(key, stepFoo) {
+  stepFoo(cacheDynamicStorage[key]);
+}
+exports.getDynamicCache= getDynamicCache;
+
+var setDynamicCache = function(key, data) {
+  cacheDynamicStorage[key] = data;
+}
+exports.setDynamicCache = setDynamicCache;
+
+exports.forceUpdateStatic = forceUpdateStatic;
+exports.forceClearDynamic = forceClearDynamic;
 exports.cacheStatic = cacheStaticStorage;
+exports.cacheDynamic = cacheDynamicStorage;
