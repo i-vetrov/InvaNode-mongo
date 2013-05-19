@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -33,6 +33,7 @@ emitter.on('dbNewData', function(data){
   forceClearCache();
 });
 emitter.on('pluginEdit', function(data){
+  process.send({event:'eventPluginEdit'});
   forceClearCache();
 });
 emitter.on('resetIndex', function(data){

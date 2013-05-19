@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -15,31 +15,32 @@
 //
 exports.vars = {
       title: 'InvaNode CMS',
-      appName: 'InvaNode CMS',
-      siteUrl: 'http://192.168.0.104/',
+      appName: 'invanode',
+      siteUrl: '',
       indexDescription: 'IvaNode - open source content management system based on Node.js',
       dbHost: 'localhost',
-      dbName: 'invanode',
+      dbName: '',
       dbUser: '',
       dbPass: '',
       dbPort: 27017,
       serverListenPort: 80,
-      serverListenIP: '192.168.0.104' 
+      serverListenIP: ''
 };
 
 //
 // Possible variables in routing graph:
 //
-// :alias      - post alias
-// :id         - post id
-// :year       - the year of post creating (e.g. '2013')
-// :monthnum   - the month number of post creating (e.g. '03' for march)
-// :day        - the day of the month when post was created
-// :category   - category name
+// :alias         - post alias
+// :id            - post id
+// :year          - the year of post creating (e.g. '2013')
+// :monthnum      - the month number of post creating (e.g. '03' for march)
+// :day           - the day of the month when post was created
+// :category      - category name
+// :cat-tree      - category tree, like '/catname/subcatname/onemoresubcat/'
 // 
 // ****N.B.!     Routing graph has to finish with :alias!      N.B.!****
 //
-exports.routingGraph = ':category/:year/:monthnum/:day/:alias';
+exports.routingGraph = ':cat-tree/:year/:monthnum/:day/:alias';
 
 //
 // Set up the number of posts per page for pagination
@@ -75,10 +76,19 @@ exports.cache = {
       watchFiles: true,
       cacheVolume: 3600,    // Note! Adjust this two options according to your
       cacheSize: 65536,     //       server parameters and your needs.
-      cachePath: []
-    },
+      cachePath: []    // put path of files you want 
+    },                 // to cache (without /www/): '/images/pic.jpg'
     dynamic: {
-      cacheOn: false,
+      cacheOn: true,
       cacheVolume: 3600    // max number of cached pages
     }
 };
+
+
+// iskvs options
+// see https://github.com/i-vetrov/iskvs for more details
+// that options should look like Node.js net.client options
+
+exports.iskvsOpt = {
+  path: __dirname + "/echo.sock"
+}

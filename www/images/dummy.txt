@@ -1,0 +1,706 @@
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57
+
+dummy
+
+I'm trying to create a static file server in nodejs more as an exercise to understand node than as a perfect server. I'm well aware of projects like Connect and node-static and fully intend to use those libraries for more production-ready code, but I also like to understand the basics of what I'm working with. With that in mind, I've coded up a small server.js:
+
+var http = require('http'),
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
+
+http.createServer(function(req, res) {
+    var uri = url.parse(req.url).pathname;
+    var filename = path.join(process.cwd(), uri);
+    path.exists(filename, function(exists) {
+        if(!exists) {
+            console.log("not exists: " + filename);
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.write('404 Not Found\n');
+            res.end();
+        }
+        var mimeType = mimeTypes[path.extname(filename).split(".")[1]];
+        res.writeHead(200, mimeType);
+
+        var fileStream = fs.createReadStream(filename);
+        fileStream.pipe(res);
+
+    }); //end path.exists
+}).listen(1337);
+My question is twofold
+
+Is this the "right" way to go about creating and streaming basic html etc in node or is there a better/more elegant/more robust method ?
+
+Is the .pipe() in node basically just doing the following?
+
+.
+
+var fileStream = fs.createReadStream(filename);
+fileStream.on('data', function (data) {
+    res.write(data);
+});
+fileStream.on('end', function() {
+    res.end();
+});
+Thanks everyone!
+
+http node.js webserver
+share|edit|flag
+edited Sep 1 '11 at 8:56
+
+yojimbo87
+20.2k74677	
+asked Sep 1 '11 at 8:52
+
+slapthelownote
+1,1141517
+3 Answers activeoldestvotes
+up vote
+11
+down vote
+accepted
+Your basic server looks good, except:
+
+There is a return statement missing.
+
+res.write('404 Not Found\n');
+res.end();
+return; // <- Don't forget to return here !!
+And:
+
+res.writeHead(200, mimeType);
+
+should be:
+
+res.writeHead(200, {'Content-Type':mimeType});
+
+Yes pipe() does basically that, it also pauses/resumes the source stream (in case the receiver is slower). Here is the source code of the pipe() function: https://github.com/joyent/node/blob/master/lib/stream.js
+
+share|edit|flag
+answered Sep 1 '11 at 9:28
+
+stewe
+9,5571840
+ 	
+ 	
+awesome - thanks for the corrections Stewe. – slapthelownote Sep 1 '11 at 10:41
+1	
+ 	
+what will happen if file name is like blah.blah.css ? – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+mimeType shall be blah in that case xP – Darkyen Feb 14 '12 at 8:03
+2	
+ 	
+Isn't that the rub though? if you write your own, you are asking for these types of bugs. Good learning excerise but I am learning to appreciate "connect" rather than rolling my own. The problem with this page is people are looking just to find out how to do a simple file server and stack overflow comes up first. This answer is right but people aren't looking for it, just a simple answer. I had to find out the simpler one myself so put it here. – zipstory.com Aug 22 '12 at 21:57

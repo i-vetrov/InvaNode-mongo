@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -130,6 +130,10 @@ exports.serverExecute = function(_in, postData, response) {
   });
 };
 
+exports.reloadPlugins = function() {
+  plugins.reloadPlugins();
+}
+
 exports.fire = function(template, place, stepFoo) {
   plugins.plugin.forEach(function(plugin){
     if(plugin.applyTo.indexOf(place) != -1) { 
@@ -191,7 +195,7 @@ exports.savePlugin = function(fs, data, stepFoo) {
                      , 'utf-8');
   }
   catch(exception_var) {
-    console.log('saving plugin error: '+exception_var);
+    console.log('saving plugin error: ' + exception_var);
     stepFoo("error");
     return;
   }

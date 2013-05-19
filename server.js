@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -9,20 +9,6 @@
  **/
 
 // InvaNode http server
-
-
-/**
- * @license InvaNode CMS v0.1.3
- * https://github.com/i-vetrov/InvaNode
- * https://github.com/i-vetrov/InvaNode-mongo
- *
- * Author: Ivan Vetrau (http://www.invatechs.com/)
- *
- * Copyright (C) 2013 Ivan Vetrau 
- * Licensed under the MIT license (MIT)
- **/
-
-//InvaNode core app
 
 var options = require("./options");
 var db = require("./db");
@@ -38,6 +24,9 @@ var url = require("url");
 var querystring = require("querystring");
 var routingGraph = options.routingGraph;
 var events = require("./events");
+var __wwwdir = path.join(__dirname, 'www');
+
+http.globalAgent.maxSockets = 100000; 
 
 function respDone(response) {
   response.writeHead(200, {"Content-Type": "text/plain"});
@@ -81,7 +70,7 @@ function respJSON(data, response) {
   }
   catch(e){
     console.log('error sending json on respJSON():' + e);
-    respError(response)
+    respError(response);
   }
 }
 
@@ -90,20 +79,33 @@ function respShow301(location, response) {
   response.end();
 }
 
+function respHtml(data, response) {
+  response.writeHead(200, {"Content-Type": "text/html"});
+  response.end(data);
+}
+
 String.prototype.replaceAll = function(find, replace_to) {
   return this.replace(new RegExp(find, "g"), replace_to);
 };
+
+String.prototype.replaceAllMassive = function(obj) {
+  var out = this;
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+       out = out.replaceAll(key, obj[key]);
+    }
+  }
+  return out;
+}
 
 String.prototype.md5 = function() {
   return crypto.createHash('md5').update(this).digest("hex");
 };
 
 function getFormattedDate(raw) {
-  var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   var date = '<span class="date-d">' + raw.getDate() + '</span> <span class="date-m">' + 
-             monthNames[raw.getMonth()] + '</span> <span class="date-y">' +
-             raw.getFullYear() + '</span>'
+    monthNames[raw.getMonth()] + '</span> <span class="date-y">' + raw.getFullYear() + '</span>'
   return date;
 }
 
@@ -124,204 +126,183 @@ function getPagination(curPage, count) {
   }
 }
 
-function getCategorization() {  
-  db.getCategories(function(data){
-    data.forEach(function(cat){
-      if(cat.perrent !="null"){
-        db.categorization[cat.alias] = cat;
-      }
+function buildRoutingGraph(entity) {
+  var monthnum = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+  var toReplace = {
+    ":category":  entity.categories[0],
+    ":cat-tree":  db.categorization[entity.categories[0]].tree,
+    ":alias":     entity.alias,
+    ":id":        entity.id,
+    ":year":      new Date(entity.time*1000).getUTCFullYear(),
+    ":monthnum":  monthnum[new Date(entity.time*1000).getUTCMonth()],
+    ":day":       new Date(entity.time*1000).getUTCDate()
+  };
+  var url = routingGraph.replaceAllMassive(toReplace);
+  return url;            
+}
+
+function htmlAuthor(name) {
+  return '<span><a alias="author/' + encodeURIComponent(name)+ '" page-type="author" page-alias="' + 
+    encodeURIComponent(name) + '" page-title="Search" href="/author/' + 
+    encodeURIComponent(name) + '">' + name + '</a></span>';
+}
+
+function htmlTags(list) {
+  var tags = '';
+  if(!list)
+  {
+    tags = '<i>none</i>';
+  }
+  else{
+    list.forEach(function(tag) {
+      tags += '<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' + tag + 
+        '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>';
     });
-  });
-} 
+  }
+  return tags;
+}
 
+function htmlCategories(list) {
+  var categories = '';
+  if(!list) {
+    categories = '<i>none</i>'
+  }
+  else {
+    list.forEach(function(cat) {
+      categories += '<span><a alias="category/' + cat + '" page-type="categories" page-alias="' + 
+        cat + '" page-title="Search" href="/category/' + cat + '">'+cat+'</a></span>';
+    });
+  }
+  return categories;
+}
 
-
-function popTemplate(request, response, urlQuery, fname, dname) {   
+function popTemplate(request, response, urlQuery, fname, dname) {
   var forbiddenAlias = ["api", "login", "logout", "admin"];
   if(forbiddenAlias.indexOf(fname) != -1 && dname == '/') {
     respShow404(response);
     return;
   }
   var thereIsNoUrlQuery = Object.keys(urlQuery).length === 0;
-  if(cache.cacheDynamic[dname+"/"+ decodeURI(fname)] !== undefined
-    && thereIsNoUrlQuery) {
-    cache.getDynamicCache(dname+"/"+ decodeURI(fname), function(data){
-      response.writeHead(200, {"Content-Type": "text/html"});
-      response.end(data);
-    });
-    return;
-    
-  }
-  var pagination = {
-    start:0, 
-    stop: options.numPostPerPage
-  };
-  if(urlQuery.page){
-    pagination.start = (urlQuery.page - 1)*(options.numPostPerPage);
-    pagination.stop = pagination.start + options.numPostPerPage;
-  }
-  else{
-    urlQuery.page = 1;
-  }
-  var outTemplate = "nodata";
-  var cookies = {};
-  request.headers.cookie && request.headers.cookie.split(';').forEach(function( cookie ) {
-    var parts = cookie.split('=');
-    cookies[ parts[ 0 ].trim() ] = ( parts[ 1 ] || '' ).trim();
-  });
-  db.getMainMenu(fname, dname, "html", function(res) {
-    getPageContent(fname, dname, pagination, function(cont){
-      var title;
-      if(cont===undefined){
-        respShow404(response); 
+  cache.getDynamicCache(dname+"/"+ decodeURI(fname), function(cacheData){
+    if(cacheData != null && thereIsNoUrlQuery) {
+      respHtml(cacheData, response);
+    }
+    else {
+      var pagination = {
+        start:0, 
+        stop: options.numPostPerPage
+      };
+      if(urlQuery.page){
+        pagination.start = (urlQuery.page - 1)*(options.numPostPerPage);
+        pagination.stop = pagination.start + options.numPostPerPage;
       }
       else{
-        if(cont.code)
-        {
-          respError(response);
-          return;
-        }
-        var searchQuery = '';
-        if(fname==="" && dname=="/"){
-          outTemplate = template.base.header+template.base.index+template.base.footer;
-          title = options.vars.title;
-          cont.type = "index";
-        } 
-        else if(dname=="/tag" || dname=="/search" || dname == "/author" || dname == "/category"){
-          outTemplate = template.base.header+template.base.search+template.base.footer;
-          title = "Search | "+options.vars.title;
-          cont.type = "search";
-          searchQuery = 'Search by ' + cont.searchPlace + ': <span>' + 
-                        decodeURIComponent(fname) + '</span>';
-        }
-        else {
-         cont.template = cont.template ? cont.template : "base";
-          if(cont.type == "pages"){
-            outTemplate = template[cont.template].header+template[cont.template].page+template[cont.template].footer; 
+        urlQuery.page = 1;
+      }
+      var outTemplate = "nodata";
+      db.getMainMenu(fname, dname, "html", function(res) {
+        getPageContent(fname, dname, pagination, function(cont){
+          var title;
+          if(cont===undefined){
+            respShow404(response); 
           }
-          else if(cont.type == "posts") {
-            if((dname+'/'+fname) != '/' + buildRoutingGraph(cont.type,
-                                                            cont._id,
-                                                            cont.alias,
-                                                            cont.categories[0],
-                                                            cont.time)){
-              respShow404(response);
+          else{
+            if(cont.code)
+            {
+              respError(response);
               return;
             }
-            outTemplate = template[cont.template].header+template[cont.template].post+template[cont.template].footer;
-          }
-          title = cont.name+' | '+options.vars.title;
-        }
-        if(outTemplate == "nodata") {
-          respShow301(options.vars.siteUrl, response);
-          return;
-        }
-        var tags = '';
-        if(!cont.tags || cont.tags == false)
-        {
-          cont.tags = [];
-          tags='<i>none</i>'
-        }
-        else{
-          cont.tags.forEach(function(tag){
-            tags += '<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' +
-                    tag + '" page-title="Search" href="/tag/' + tag + '">' + tag + '</a></span>';
-          });
-        }
-        var categories='';
-        if(!cont.categories || cont.categories == false)
-        {
-          cont.categories = [];
-          categories='<i>none</i>'
-        }
-        else{
-          cont.categories.forEach(function(cat){
-            categories += '<span><a alias="category/' + cat + 
-                          '" page-type="categories" page-alias="' + cat + 
-                          '" page-title="Search" href="/category/' + cat + 
-                          '">'+cat+'</a></span>'
-          });
-        }
-        var author = '<span><a alias="author/' + encodeURIComponent(cont.author) + 
-                     '" page-type="author" page-alias="' +
-                     encodeURIComponent(cont.author) +
-                     '" page-title="Search" href="/author/' + 
-                     encodeURIComponent(cont.author) + '">' + 
-                     cont.author + '</a></span>';
-        plugins.fire(outTemplate
-              .replaceAll("{{JS_CUR_PAGE_URL}}", fname)
-              .replaceAll("{{JS_SITE_URL}}",options.vars.siteUrl)
-              .replaceAll("{{JS_SITE_NAME}}",options.vars.appName)
-              .replaceAll("{{NUM_POSTS_PER_PAGE}}", options.numPostPerPage)
-              .replaceAll("{{ROUTING_GRAPH}}",routingGraph)
-              .replaceAll("{{POST_NAME}}", cont.name)
-              .replaceAll("{{POST_DATE}}", getFormattedDate(new Date(cont.time*1000)))
-              .replaceAll("{{PAGE_CONTENT}}", cont.smalldata+cont.data)
-              .replaceAll("{{PAGINATION}}", getPagination(urlQuery.page, cont.allEntityCount))
-              .replaceAll("{{MAIN_MENU}}", res)
-              .replaceAll("{{TITLE}}", title)
-              .replaceAll("{{APPNAME}}", options.vars.appName)
-              .replaceAll("{{SITE_URL}}", options.vars.siteUrl)
-              .replaceAll("{{SEARCH_QUERY}}", searchQuery)
-              .replaceAll("{{POST_AUTHOR}}", author)
-              .replaceAll("{{POST_TAGS}}", tags)
-              .replaceAll("{{POST_CATEGORIES}}", categories)
-              .replaceAll("{{PAGE_TYPE}}", cont.type)
-              .replaceAll('{{PAGE_DESCRIPTION}}', cont.description),
-          cont.type, function(data){
-            response.writeHead(200, {"Content-Type": "text/html"});
-            response.end(data);
-            if(options.cache.dynamic.cacheOn 
-              && Object.keys(cache.cacheDynamic).length < options.cache.dynamic.cacheVolume
-              && thereIsNoUrlQuery) {
-                cache.setDynamicCache(dname+"/"+ decodeURI(fname), data);
+            var searchQuery = '';
+            cont.template = cont.template ? cont.template : "base";
+            if(cont.categories == undefined || cont.categories == false) {
+              cont.categories = [];
+              cont.categories[0] = 'uncategorized';
             }
+            if(fname==="" && dname=="/"){
+              outTemplate = template.base.header+template.base.index+template.base.footer;
+              title = options.vars.title;
+              cont.type = "index";
+            } 
+            else if(dname=="/tag" || dname=="/search" || dname == "/author" || dname == "/category"){
+              outTemplate = template.base.header+template.base.search+template.base.footer;
+              title = "Search | "+options.vars.title;
+              cont.type = "search";
+              searchQuery = 'Search by ' + cont.searchPlace + ': <span>' + 
+                            decodeURIComponent(fname) + '</span>';
+            }
+            else {
+              if(cont.type == "pages"){
+                outTemplate = template[cont.template].header+template[cont.template].page+template[cont.template].footer; 
+              }
+              else if(cont.type == "posts") {
+                if((dname+'/'+fname) != '/' + buildRoutingGraph(cont)){
+                  respShow404(response);
+                  return;
+                }
+                outTemplate = template[cont.template].header + 
+                  template[cont.template].post+template[cont.template].footer;
+              }
+              title = cont.name + ' | ' + options.vars.title;
+            }
+            if(outTemplate == "nodata") {
+              respShow301(options.vars.siteUrl, response);
+              return;
+            }
+            var tags = htmlTags(cont.tags);
+            var categories = htmlCategories(cont.categories);
+            var author = htmlAuthor(cont.author);
+            var toReplace = {
+              "{{JS_CUR_PAGE_URL}}":    fname,
+              "{{JS_SITE_URL}}":        options.vars.siteUrl,
+              "{{JS_SITE_NAME}}":       options.vars.appName,
+              "{{NUM_POSTS_PER_PAGE}}": options.numPostPerPage,
+              "{{ROUTING_GRAPH}}":      routingGraph,
+              "{{POST_NAME}}":          cont.name,
+              "{{POST_DATE}}":          getFormattedDate(new Date(cont.time*1000)),
+              "{{PAGE_CONTENT}}":       cont.smalldata+cont.data,
+              "{{PAGINATION}}":         getPagination(urlQuery.page, cont.allEntityCount),
+              "{{MAIN_MENU}}":          res,
+              "{{TITLE}}":              title,
+              "{{APPNAME}}":            options.vars.appName,
+              "{{SITE_URL}}":           options.vars.siteUrl,
+              "{{SEARCH_QUERY}}":       searchQuery,
+              "{{POST_AUTHOR}}":        author,
+              "{{POST_TAGS}}":          tags,
+              "{{POST_CATEGORIES}}":    categories,
+              "{{PAGE_TYPE}}":          cont.type,
+              '{{PAGE_DESCRIPTION}}':   cont.description,
+              '{{TEMPLATE_NAME}}':      cont.template
+            };
+            plugins.fire(outTemplate.replaceAllMassive(toReplace), cont.type, function(data){
+              respHtml(data, response);
+              if(thereIsNoUrlQuery) {
+                cache.setDynamicCache(dname+"/"+ decodeURI(fname), data);
+              }
+            });
           }
-        );
-      }
-    });
-  });                 
+        });
+      });
+    }
+  });              
 }
 
 function popAdminTemplate(userObj, request, response) {       
   try{
-    var logged = fs.readFileSync(__dirname+"/template/admin/logged.html", 'utf-8');
-    var admin =  fs.readFileSync(__dirname+"/template/admin/" + options.adminTemplate, 'utf-8');
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.write(admin.replaceAll("{{APPNAME}}", options.vars.appName)
-                        .replaceAll("{{SITE_URL}}", options.vars.siteUrl)
-                        .replaceAll("{{USER_MENU}}", logged)
-                        .replaceAll("{{USER_NAME}}", userObj.name)
-                        .replaceAll("{{USER_LEVEL}}", userObj.level));
-    response.end();
+    var logged = fs.readFileSync(path.join(__wwwdir, "/template/admin/logged.html"), 'utf-8');
+    var admin =  fs.readFileSync(path.join(__wwwdir, "/template/admin/", options.adminTemplate), 'utf-8');
+    var toReplace = {
+      "{{APPNAME}}":    options.vars.appName,
+      "{{SITE_URL}}":   options.vars.siteUrl,
+      "{{USER_MENU}}":  logged,
+      "{{USER_NAME}}":  userObj.name,
+      "{{USER_LEVEL}}": userObj.level
+    };
+    respHtml(admin.replaceAllMassive(toReplace), response);
   }    
   catch(e){
     respShow404(response);
     console.log("file loading error: " + e);
   }    
-}
-
-function getLocalImages(stepFoo) { 
-  fs.readdir(__dirname+"/images",function(error, files){
-    if(error){
-      console.log(error);
-      stepFoo("error")
-    }
-    else{    
-      stepFoo(files);
-    }
-  });
-}
-
-function buildRoutingGraph(type, id, alias, category, date) {
-  var monthnum = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-  var url = routingGraph.replaceAll(":category", category)
-                        .replaceAll(":alias", alias)
-                        .replaceAll(":id", id)
-                        .replaceAll(":year", new Date(date*1000).getUTCFullYear())
-                        .replaceAll(":monthnum", monthnum[new Date(date*1000).getUTCMonth()])
-                        .replaceAll(":day", new Date(date*1000).getUTCDate());
-  return url;            
 }
 
 function getPageContent(fname, dname, pagination, stepFoo) {
@@ -354,23 +335,12 @@ function getPageContent(fname, dname, pagination, stepFoo) {
           var contMin = pagination.start;
           var i = contMin - 1;
           while (++i < contMax)
-          { 
-            var categories='';
-            if(!contents[i].categories || contents[i].categories == false)
-            {
+          {
+            if(contents[i].categories == undefined || contents[i].categories == false) {
               contents[i].categories = [];
-              categories='<i>none</i>'
+              contents[i].categories[0] = 'uncategorized';
             }
-            else{
-              contents[i].categories.forEach(function(cat){
-                if(db.categorization[cat].searchable==1){
-                  categories +='<span><a alias="category/' +
-                               cat + '" page-type="categories" page-alias="' +
-                               cat + '" page-title="Search" href="/category/' +
-                               encodeURIComponent(cat) + '">' + cat + '</a></span>';
-                }           
-              });
-            }
+            var categories= htmlCategories(contents[i].categories);
             if(results.type=='index')
             {
               if(contents[i].categories != false) {
@@ -395,41 +365,25 @@ function getPageContent(fname, dname, pagination, stepFoo) {
                 }
               }  
             }
-            var tags='';
-            if(!contents[i].tags || contents[i].tags == false)
-            {
-              contents[i].tags = [];
-              tags='<i>none</i>'
-            }
-            else{
-              contents[i].tags.forEach(function(tag){
-                tags +='<span><a alias="tag/' + tag + '" page-type="tags" page-alias="' + 
-                       tag + '" page-title="Search" href="/tag/' + encodeURIComponent(tag) + '">' + tag + '</a></span>'
-              });
-            }
-            
-            var author =  '<span><a alias="author/' + encodeURIComponent(contents[i].author) + 
-                          '" page-type="author" page-alias="' +
-                          encodeURIComponent(contents[i].author) +
-                          '" page-title="Search" href="/author/' + 
-                          encodeURIComponent(contents[i].author) + '">' + 
-                          contents[i].author + '</a></span>';
-            var rGraph = buildRoutingGraph(contents[i].type, contents[i]._id, 
-                                           contents[i].alias, contents[i].categories[0], 
-                                           contents[i].time);            
+            var tags = htmlTags(contents[i].tags);
+            var author = htmlAuthor(contents[i].author);
+            var rGraph = buildRoutingGraph(contents[i]);
             contents[i].template = contents[i].template ? contents[i].template : "base";
             try{
-              results.data += template[contents[i].template].small_post.replaceAll("{{SMALL_POST_NAME}}", contents[i].name)
-              .replaceAll("{{SMALL_POST_DATE}}", getFormattedDate(new Date(contents[i].time*1000))) 
-              .replaceAll("{{SMALL_POST_CONTENT}}", contents[i].smalldata)
-              .replaceAll("{{SMALL_POST_LINK}}", options.vars.siteUrl + rGraph)
-              .replaceAll("{{PAGE_ALIAS}}", contents[i].alias)
-              .replaceAll("{{LINK_ALIAS}}",  rGraph)
-              .replaceAll("{{POST_TAGS}}", tags)
-              .replaceAll("{{POST_CATEGORIES}}", categories)
-              .replaceAll("{{POST_AUTHOR}}", author)
-              .replaceAll("{{PAGE_TYPE}}", contents[i].type)
-              .replaceAll("{{LINK_TITLE}}", contents[i].name.replaceAll('["]', "\\'"));
+              var toReplace = {
+                "{{SMALL_POST_NAME}}":    contents[i].name,
+                "{{SMALL_POST_DATE}}":    getFormattedDate(new Date(contents[i].time*1000)),
+                "{{SMALL_POST_CONTENT}}": contents[i].smalldata,
+                "{{SMALL_POST_LINK}}":    options.vars.siteUrl + rGraph,
+                "{{PAGE_ALIAS}}":         contents[i].alias,
+                "{{LINK_ALIAS}}":         rGraph,
+                "{{POST_TAGS}}":          tags,
+                "{{POST_CATEGORIES}}":    categories,
+                "{{POST_AUTHOR}}":        author,
+                "{{PAGE_TYPE}}":          contents[i].type,
+                "{{LINK_TITLE}}":         contents[i].name.replaceAll('["]', "\\'")
+              }
+              results.data += template[contents[i].template].small_post.replaceAllMassive(toReplace);
             }
             catch(e){
               console.log("small_post templating error: "+e);
@@ -472,6 +426,18 @@ function getPageContent(fname, dname, pagination, stepFoo) {
   }
 }
 
+function getLocalImages(stepFoo) { 
+  fs.readdir(path.join(__wwwdir, "/images"),function(error, files){
+    if(error){
+      console.log(error);
+      stepFoo("error")
+    }
+    else{    
+      stepFoo(files);
+    }
+  });
+}
+
 function editOldData(postData, request, response) {   
   try{
     var postDadaObj = JSON.parse(postData);
@@ -506,7 +472,7 @@ function editOldData(postData, request, response) {
           if(!err){
             respDone(response);
             events.emit('dbDataEdit');
-            getCategorization();
+            db.buildCategorization();
           }
           else{
             respGoIndex(response);
@@ -578,7 +544,7 @@ function saveNewData(postData, request, response) {
           if(!err){
             respDone(response);
             events.emit("dbNewData");
-            getCategorization();
+            db.buildCategorization();
           }    
           else{
             respGoIndex(response); 
@@ -615,7 +581,7 @@ function uploadImageFile(postData, request, response) {
       try{           
         var dta64 = data.split(',');
         var buf = new Buffer(dta64[1], 'base64');
-        fs.open(__dirname+"/images/"+name, 'w', 0755, function(err, fd){
+        fs.open(path.join(__wwwdir, "/images/", name), 'w', 0755, function(err, fd){
           fs.write(fd, buf, 0, buf.length, 0, function(err, written, buffer){
             if(err) {
               respError(response);
@@ -656,7 +622,7 @@ function processTemplateData(postData, request, response) {
       switch(todo)
       {
         case 'get':
-          fs.readFile(__dirname+"/template/theme/" + alias+ "/" + fname, function(err, data){
+          fs.readFile(path.join(__wwwdir, "/template/theme/", alias, fname), function(err, data){
             if(err)
             {
               respError(response);
@@ -671,7 +637,7 @@ function processTemplateData(postData, request, response) {
           });       
           break;
         case 'save':
-          fs.writeFile(__dirname+"/template/theme/" + alias+ "/"  + fname, fdata, function(err){
+          fs.writeFile(path.join(__wwwdir, "/template/theme/", alias, fname), fdata, function(err){
             if(err) {
               respError(response);
               console.log(err);
@@ -774,7 +740,7 @@ function apiCall(request, response) {
             data = JSON.parse(data);
             var tplAlias = data.alias ? data.alias : '';
             if(check && userObj.level == 0){
-              fs.readdir(__dirname + "/template/theme/" + tplAlias, function(error, files){
+              fs.readdir(path.join(__wwwdir, "/template/theme/", tplAlias), function(error, files){
                 if(error){
                   console.log(error);
                   respError(response);
@@ -887,10 +853,10 @@ function apiCall(request, response) {
         db.loggedIn(request, function(check, userObj){
           if(check && userObj.level == 0){
             plugins.savePlugin(fs, data, function(data){
-              respData(data, response);
               if(data == "done") {
                 events.emit("pluginEdit");
               }
+              respData(data, response);
             });
           }
           else{
@@ -966,7 +932,8 @@ function makeLogin(request, response) {
 function makeLogout(response) {
   response.writeHead(200, {
     "Set-Cookie": "INSSID=EXP; expires=Fri, 31 Dec 2010 23:59:59 GMT; path=/",
-    "Content-Type": "text/html"
+    "Content-Type": "text/html",
+    "Location": options.vars.siteUrl
   });
   response.end('<script>window.location.href = "/";</script>');
 }
@@ -1018,7 +985,7 @@ function serveStatic(dname, fname, ext, response) {
     respS(cache.cacheStatic[filePath]);
   }
   else{
-    fs.readFile(__dirname+dname+"/"+ decodeURI(fname), function(error, data){
+    fs.readFile(path.join(__wwwdir, dname, decodeURI(fname)), function(error, data){
       if(!error){
         respS(data);
       }

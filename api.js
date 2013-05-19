@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -211,13 +211,6 @@ getLatestPosts = function(data, db, plugins, stepFoo)
         out[max] = results[max];  
       }
       stepFoo(JSON.stringify(out))
-      //
-      // Now there is no need to fire plugins before call callback funct. coz getLatestPosts 
-      // is used only for plugin "Latest posts"
-      // 
-      // plugins.fire(JSON.stringify(out), "posts", function(data){
-      //   stepFoo(data);
-      // });
     });
   }    
   catch (e){

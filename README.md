@@ -20,6 +20,12 @@ You will need to install MongoDB native driver (OR there is <a href="https://git
 
       npm install mongodb
 
+And iskvs lib: 
+
+      npm install iskvs
+
+(Or just enter folder with Invanode and install package dependencies: `npm install`)
+
 Then clone InvaNode sources:
     
       git clone git://github.com/i-vetrov/InvaNode-mongo.git

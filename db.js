@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -32,19 +32,37 @@ mongo.connect(mongoURL, {
     if(!err) {
       db = d;
       exports.db = db;
-      getCategories(function(data){
-        data.forEach(function(cat){
-          if(cat.perrent !="null"){
-            categorization[cat.alias] = cat;
-          }
-        });
-      });
+      buildCategorization();
     }
-    else{
+    else {
       console.log("MongoDB connection error " + err);
     }
   }
 );
+
+var buildCategorization = function() {
+  getCategories(function(data) {
+    data.forEach(function(cat) {
+      categorization[cat.alias] = cat;
+    });
+    for (cat in categorization) {
+      categorization[cat].tree = getCategoryTree(categorization[cat].alias);
+    }
+  });
+}
+exports.buildCategorization = buildCategorization;
+
+function getCategoryTree(leaf) {
+  var out = leaf;
+  if(leaf !== 'uncategorized') {
+    var curleaf = leaf;
+    while (categorization[curleaf].parent !== 'null') {
+      out = categorization[curleaf].parent + '/' + out;
+      curleaf = categorization[curleaf].parent;
+    }
+  }
+  return out;
+}
 
 exports.getIndexContent = function (stepFoo)
 {
@@ -507,9 +525,9 @@ exports.deleteDataProc = function (request, data, stepFoo)
   }
   var Types = ['posts', 'pages', 'users', 'categories'];
   if(Types.indexOf(type) != -1){
-    loggedIn(request, function(check, userObj){              
-      if(check && userObj.level <= 2){
-        if(type != 'posts' && userObj.level <= 1){
+    loggedIn(request, function(check, userObj){
+      if(check && userObj.level < 3){
+        if(type != 'posts' && userObj.level > 2){
           stepFoo(true);
           return;
         }

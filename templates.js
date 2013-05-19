@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -12,8 +12,10 @@
 
 var db = require("./db");
 var fs = require("fs");
+var path = require('path');
 var options = require("./options");
 var events = require("./events");
+var __wwwdir = path.join(__dirname, 'www');
 var template = {};
 
 var tplFiles = {
@@ -33,10 +35,10 @@ function Template() {
   this.initTemplate = function(alias, stepFoo) {
     var context = this;
     context.alias = alias;
-    var themeDir = __dirname + "/template/theme/" + alias + "/";
+    var themeDir = path.join(__wwwdir, "/template/theme/", alias);
     for(var tpl in tplFiles) {
       try {
-        context[tpl] = fs.readFileSync(themeDir + tplFiles[tpl], 'utf-8');
+        context[tpl] = fs.readFileSync(path.join(themeDir, tplFiles[tpl]), 'utf-8');
       }
       catch(exception_var) {
         if(alias == "base") {
@@ -51,8 +53,8 @@ function Template() {
       }
     }
     try {
-      context.jquery = fs.readFileSync(__dirname + "/template/assets/js/jquery.js", 'utf-8');
-      context.injs = fs.readFileSync(__dirname + "/template/assets/js/in.js", 'utf-8');
+      context.jquery = fs.readFileSync(path.join(__wwwdir, "/template/assets/js/jquery.js"), 'utf-8');
+      context.injs = fs.readFileSync(path.join(__wwwdir, "/template/assets/js/in.js"), 'utf-8');
       if(stepFoo){
           stepFoo(false);
       }
@@ -86,7 +88,7 @@ function Template() {
 }
 
 function getTemplates() {
-  var list = fs.readdirSync(__dirname + "/template/theme");
+  var list = fs.readdirSync(path.join(__wwwdir, "/template/theme"));
   list.forEach(function(file){
     if(file != "base") {
       template[file] = new Template();

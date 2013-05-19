@@ -1,5 +1,5 @@
 /**
- * @license InvaNode CMS v0.1.4
+ * @license InvaNode CMS v0.1.5
  * https://github.com/i-vetrov/InvaNode-mongo
  *
  * Author: Ivan Vetrau (http://www.invatechs.com/)
@@ -17,6 +17,10 @@ var events = require("./events");
 var cacheStaticStorage = {};
 var cacheSize = 0;
 var cacheDynamicStorage = {};
+var __wwwdir = path.join(__dirname, 'www');
+
+
+var iskvs_client = require('iskvs').Client(options.iskvsOpt.path);
 
 String.prototype.replaceAll=function(find, replace_to) {
   return this.replace(new RegExp(find, "g"), replace_to);
@@ -58,12 +62,22 @@ function doCache(fullPath) {
   }
 }
 
+function countStaticCacheEntriesNum() {
+  var count = 0;
+  for (var k in cacheStaticStorage) {
+    if (cacheStaticStorage.hasOwnProperty(k)) {
+       ++count;
+    }
+  }
+  return count;
+}
+
 function putIntoCache(fullPath, fileSize) {
-  try {
-    if(cacheStaticStorage[fullPath.replaceAll(__dirname, '')] !== undefined
-        || (cacheStaticStorage.length < options.cache.stat.cacheVolume
+   try {
+    if(cacheStaticStorage[fullPath.replaceAll(__wwwdir, '')] !== undefined
+        || (countStaticCacheEntriesNum() < options.cache.stat.cacheVolume
         && (parseInt(cacheSize) + parseInt(fileSize)) < (options.cache.stat.cacheSize*1024))) {
-      cacheStaticStorage[fullPath.replaceAll(__dirname, '')] = fs.readFileSync(fullPath);
+      cacheStaticStorage[fullPath.replaceAll(__wwwdir, '')] = fs.readFileSync(fullPath);
       cacheSize += fileSize;
       if(options.cache.stat.watchFiles) {
         fs.watch(fullPath, function(e, f){
@@ -76,34 +90,43 @@ function putIntoCache(fullPath, fileSize) {
   }
   catch(e) {
     console.log("putting into cache error: " + e);
-  }  
-}
-
-var forceClearDynamic = function() {
-  for (c in cacheDynamicStorage) {
-    if(cacheDynamicStorage.hasOwnProperty(c)){
-      cacheDynamicStorage[c] = undefined;
-      delete cacheDynamicStorage[c];
-    }
   }
 }
 
 var forceUpdateStatic = function(){
-  doCache(path.join(__dirname, 'template/assets'));
-  doCache(path.join(__dirname, 'favicon.ico'));
+  doCache(path.join(__wwwdir, 'template/assets'));
+  doCache(path.join(__wwwdir, 'favicon.ico'));
   options.cache.stat.cachePath.forEach(function(relPath){
-    doCache(path.join(__dirname, relPath));
+    doCache(path.join(__wwwdir, relPath));
   });
 }  
 forceUpdateStatic();
 
-var getDynamicCache = function(key, stepFoo) {
-  stepFoo(cacheDynamicStorage[key]);
+var forceClearDynamic = function() {
+  iskvs_client.clr(function(err, data) {
+  });
 }
-exports.getDynamicCache= getDynamicCache;
 
-var setDynamicCache = function(key, data) {
-  cacheDynamicStorage[key] = data;
+var getDynamicCache = function(key, stepFoo) {
+  if(options.cache.dynamic.cacheOn) {
+    iskvs_client.get(key, function(err, data) {
+      stepFoo(data);
+    });
+  }
+  else {
+    stepFoo(null);
+  }
+}
+exports.getDynamicCache = getDynamicCache;
+
+var setDynamicCache = function(key, value) {
+  if(options.cache.dynamic.cacheOn) {
+    iskvs_client.set(key, value, function(err, data) {
+      if(err) {
+        console.log(err);
+      }
+    });
+  }
 }
 exports.setDynamicCache = setDynamicCache;
 
