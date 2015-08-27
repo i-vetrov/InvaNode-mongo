@@ -344,8 +344,8 @@ function getPageContent(fname, dname, pagination, stepFoo) {
             if(results.type=='index')
             {
               if(contents[i].categories != false) {
-                if(db.categorization[contents[i].categories[0]].onindex == 0 
-                  || db.categorization[contents[i].categories[0]].searchable == 0) 
+                if(db.categorization[contents[i].categories[0]].onindex == 0
+                  || db.categorization[contents[i].categories[0]].searchable == 0)
                 {
                   if(contMax != contents.length){
                     contMax++;

@@ -18,12 +18,12 @@ exports.vars = {
       appName: 'invanode',
       siteUrl: '',
       indexDescription: 'IvaNode - open source content management system based on Node.js',
-      dbHost: 'localhost',
-      dbName: '',
-      dbUser: '',
-      dbPass: '',
-      dbPort: 27017,
-      serverListenPort: 80,
+      dbHost: 'ds035723.mongolab.com',
+      dbName: 'invanode-test',
+      dbUser: 'invanode-test-user',
+      dbPass: 'invanode-test-user',
+      dbPort: 35723,
+      serverListenPort: 901,
       serverListenIP: ''
 };
 
@@ -40,7 +40,7 @@ exports.vars = {
 // 
 // ****N.B.!     Routing graph has to finish with :alias!      N.B.!****
 //
-exports.routingGraph = ':cat-tree/:year/:monthnum/:day/:alias';
+exports.routingGraph = ':id';
 
 //
 // Set up the number of posts per page for pagination
@@ -90,5 +90,6 @@ exports.cache = {
 // that options should look like Node.js net.client options
 
 exports.iskvsOpt = {
-  path: __dirname + "/echo.sock"
+  //path: __dirname + "/echo.sock"
+    port: 902
 }

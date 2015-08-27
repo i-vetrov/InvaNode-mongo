@@ -12,7 +12,7 @@ InvaNode is a simple CMS. It has base functionality for simple web-site with man
 It is light and easy customizable.
 
 
-## Instalation
+## Installation
 
 You have to install [node.js](https://github.com/joyent/node) with npm first. Just make sure you have lates version of node.js.
 
@@ -47,7 +47,7 @@ Add some info to your database (mongodb console):
       db.counters.save({ "_id" : "categories", "num" : 0 })
 
 
- to create empty database with user "admin" and password "admin". Don't forget to change password when instalation is done!
+ to create empty database with user "admin" and password "admin". Don't forget to change password when installation is done!
 
 ## More information
 

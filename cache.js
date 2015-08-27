@@ -20,7 +20,13 @@ var cacheDynamicStorage = {};
 var __wwwdir = path.join(__dirname, 'www');
 
 
-var iskvs_client = require('iskvs').Client(options.iskvsOpt.path);
+var iskvs_client = null;
+
+if(options.iskvsOpt.path) {
+  iskvs_client = require('iskvs').Client(options.iskvsOpt.path);
+} else {
+  iskvs_client = require('iskvs').Client(options.iskvsOpt.port);
+}
 
 String.prototype.replaceAll=function(find, replace_to) {
   return this.replace(new RegExp(find, "g"), replace_to);

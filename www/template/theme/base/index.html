@@ -1,9 +1,13 @@
-<div style="width: 700px; float:left;">  
-    {{PAGE_CONTENT}}
-    <div class="pagination">
-      {{PAGINATION}}
-    </div>  
-</div>
-<div style="width:220px; float:right;">
-    Space for plugins
+<div id="content-container" class="container page-content">
+    <div class="row">
+      <div class="col-md-8 col-sm-8">
+       {{PAGE_CONTENT}}
+       <div class="pagination">
+         {{PAGINATION}}
+           </div>
+      </div>
+       <div class="col-md-4 col-sm-4 hidden-xs">
+         Space for plugins
+       </div>
+    </div>
 </div>

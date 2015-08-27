@@ -5,12 +5,13 @@
         <meta name="description" content="{{PAGE_DESCRIPTION}}" />
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="generator" content="InvaNode 0.1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link type="text/css" rel="stylesheet" media="all" href="/template/theme/base/style.css" />
-        <link type="text/css" rel="stylesheet" media="all" href="/template/assets/css/bootstrap.min.css" />
+        <link type="text/css" rel="stylesheet" media="all" href="/template/assets/css/bootstrap.min3.css" />
         <link rel="stylesheet" type="text/css" href="/template/assets/css/wysiwyg-color.css" />
         <script src="/template/assets/js/jquery.js"></script>
         <script src="/template/assets/js/in.js"></script>
-        <script src="/template/assets/js/bootstrap.min.js"></script>
+        <script src="/template/assets/js/bootstrap.min3.js"></script>
       	<script>
             var curPageUrl = '{{JS_CUR_PAGE_URL}}';
             var siteUrl = '{{JS_SITE_URL}}';
@@ -21,17 +22,26 @@
         </script>
     </head>
     <body>
-<div class="navbar navbar-inverse">
     <div class="grad-menu">
         <div class="container">
-            <div style="width: 940px; margin: 0 auto 75px auto;">
-                <a class="main-logo" href="{{SITE_URL}}" alias="" page-type="index" page-title="{{JS_SITE_NAME}}">{{APPNAME}}</a>
-                <div class="user-menu">{{PLUGIN:SOCIAL_BUTTONS}}</div>
+            <div class="row">
+                <div class="col-md-8 col-sm-7 col-xs-10">
+                    <a class="main-logo" href="{{SITE_URL}}" alias="" page-type="index" page-title="{{JS_SITE_NAME}}">{{APPNAME}}</a>
+                </div>
+                <div class="col-md-4 col-sm-5 hidden-xs">
+                    <div class="user-menu">{{PLUGIN:SOCIAL_BUTTONS}}</div>
+                </div>
+                <div class="col-xs-2 visible-xs main-menu-mobile-btn">
+                    <a href="#"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 hidden-xs">
+                    <div class="main-menu">{{MAIN_MENU}}</div>
+                </div>
             </div>
         </div>
-        <div class="container">
-            <div class="main-menu">{{MAIN_MENU}}</div>
-        </div>
     </div>
-</div>
-<div id="content-container" class="container">    
+    <div class="main-menu-mobile">
+        {{MAIN_MENU}}
+    </div>
