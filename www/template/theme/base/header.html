@@ -9,7 +9,7 @@
         <link type="text/css" rel="stylesheet" media="all" href="/template/theme/base/style.css" />
         <link type="text/css" rel="stylesheet" media="all" href="/template/assets/css/bootstrap.min3.css" />
         <link rel="stylesheet" type="text/css" href="/template/assets/css/wysiwyg-color.css" />
-        <script src="/template/assets/js/jquery.js"></script>
+        <script src="/template/assets/js/jquery-1.11.3.min.js"></script>
         <script src="/template/assets/js/in.js"></script>
         <script src="/template/assets/js/bootstrap.min3.js"></script>
       	<script>
@@ -31,8 +31,11 @@
                 <div class="col-md-4 col-sm-5 hidden-xs">
                     <div class="user-menu">{{PLUGIN:SOCIAL_BUTTONS}}</div>
                 </div>
-                <div class="col-xs-2 visible-xs main-menu-mobile-btn">
-                    <a href="#"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></a>
+                <div class="col-xs-2 visible-xs main-menu-mobile-btn dropdown" id="mobile_menu">
+                    <button type="button" data-toggle="collapse" data-target="#collapse-menu"
+                            class="mobile-menu-button" aria-expanded="false" aria-controls="collapse-menu   ">
+                        <span class="glyphicon glyphicon-menu-hamburger"></span>
+                    </button>
                 </div>
             </div>
             <div class="row">
@@ -42,6 +45,18 @@
             </div>
         </div>
     </div>
-    <div class="main-menu-mobile">
-        {{MAIN_MENU}}
+    <div class="main-mobile-menu-bg">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 visible-xs">
+                    <div class="main-mobile-menu collapse" id="collapse-menu">
+                        {{MAIN_MENU}}
+                        <script>
+                            $('#mobile_menu > ul').addClass('dropdown-menu mobile-menu');
+                            $('#mobile_menu > ul').attr('aria-labelledby', 'dLabel');
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>

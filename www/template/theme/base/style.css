@@ -104,6 +104,37 @@
     display: block;
 }
 
+.main-mobile-menu-bg
+{
+    background: #2F7F5A;
+    background-image: url(/images/dot-bg-1.png);
+    box-shadow: 0px 4px 6px #ccc;
+}
+
+.main-mobile-menu ul
+{
+    display: block;
+    list-style: none;
+    padding: 0;
+}
+
+.main-mobile-menu ul li a
+{
+    padding: 10px;
+    display: inline-block;
+    width: 100%;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    border-top: 1px dashed #ccc;
+    margin-right: 20px;
+}
+
+.main-mobile-menu ul li a:hover
+{
+    text-decoration: none;
+}
+
 .main-menu-mobile-btn
 {
     color: #fff;
@@ -123,9 +154,21 @@
     color: #fff;
 }
 
-.main-menu-mobile
+.mobile-menu-button
 {
-    display: none !important;
+    background: none;
+    border: none;
+}
+
+.mobile-menu-button:focus
+{
+    outline: 0;
+}
+
+.mobile-menu
+{
+    width: 100%;
+    left: 0;
 }
 
 .footer-main
